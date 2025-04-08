@@ -8,33 +8,42 @@ use std::sync::Arc;
 use music::{note::{note_length_fns::*, timbre_fns::*, NoteKind, NotePitch, REST}, scales::tet12::{map_semitones_to_pitches, C4}, Line, Piece, Playable};
 use rodio::OutputStreamHandle;
 
-fn brain_stew(fifth: bool) -> Piece {
-    let g_sharp_3 = C4.semitone(8).octave(-2);
-    const BASS_VOL: f32 = 0.3;
+const BASS_VOL: f32 = 0.3;
+fn downbeat_bass(
+    n1: NotePitch,
+    n2: NotePitch,
+    fifth: bool,
+) -> Piece {
+    let mut piece = 
+    Piece::from(bass(eighth(n1).volume(BASS_VOL) + eighth(REST) * 3));
 
-    fn downbeat(
-        n1: NotePitch,
-        n2: NotePitch,
-        fifth: bool,
-    ) -> Piece {
-        let mut piece = 
-        Piece::from(bass(eighth(n1).volume(BASS_VOL) + eighth(REST) * 3));
-
-        if fifth {
-            piece = piece * bass(eighth(n2).volume(BASS_VOL / 2.0) + eighth(REST) * 3)
-        }
-
-        piece
+    if fifth {
+        piece = piece * bass(eighth(n2).volume(BASS_VOL / 2.0) + eighth(REST) * 3)
     }
 
-    downbeat(g_sharp_3, g_sharp_3.semitone(7), fifth) +
-    downbeat(g_sharp_3.semitone(-2), g_sharp_3.semitone(5), fifth) +
-    downbeat(g_sharp_3.semitone(-3), g_sharp_3.semitone(4), fifth) +
+    piece
+}
+
+fn brain_stew(fifth: bool) -> Piece {
+    let g_sharp_3 = C4.semitone(8).octave(-2);
+
+    downbeat_bass(g_sharp_3, g_sharp_3.semitone(7), fifth) +
+    downbeat_bass(g_sharp_3.semitone(-2), g_sharp_3.semitone(5), fifth) +
+    downbeat_bass(g_sharp_3.semitone(-3), g_sharp_3.semitone(4), fifth) +
     Piece::from(
         bass(eighth(g_sharp_3.semitone(-4)).volume(BASS_VOL) + eighth(REST) + eighth(g_sharp_3.semitone(-5)).volume(BASS_VOL) + eighth(REST))
     ) * (
         bass(eighth(g_sharp_3.semitone(3)).volume(BASS_VOL) + eighth(REST) + eighth(g_sharp_3.semitone(2)).volume(BASS_VOL) + eighth(REST))
     )
+}
+
+fn bridge_bass() -> Piece {
+    let g_sharp_3 = C4.semitone(8).octave(-2);
+
+    downbeat_bass(g_sharp_3, g_sharp_3.semitone(7), true) +
+    downbeat_bass(g_sharp_3.semitone(1), g_sharp_3.semitone(8), true) +
+    downbeat_bass(g_sharp_3.semitone(2), g_sharp_3.semitone(9), true) +
+    downbeat_bass(g_sharp_3.semitone(4), g_sharp_3.semitone(11), true)
 }
 
 fn im_sad_your_back() -> Line {
@@ -66,6 +75,7 @@ fn from_guitar_frets(frets: [i32; 6]) -> [NotePitch; 6] {
 }
 
 const GUITAR_I: [i32;6] = [-1, 1, 1, 1, -1, -1];
+const GUITAR_VI: [i32;6] = [1, 2, 2, 3, 3, 1];
 const GUITAR_VI_M: [i32;6] = [1, 1, 1, 3, 3, 1];
 const GUITAR_II_HALF_DIM: [i32;6] = [0, 2, 0, 1, 1, 0];
 const GUITAR_V_7: [i32;6] = [-1, -1, 1, -1, -1, -1];
@@ -162,13 +172,33 @@ fn get_final_song() -> Piece {
 
     // TODO
     let chorus_1 = Piece::from(wait_eight_beats() * 2);
-    let verse_2 = Piece::from(wait_eight_beats() * 2);
-    let prechorus_2 = Piece::from(wait_eight_beats());
+    let verse_2 = verse_1.clone();
+    let prechorus_2 = prechorus_1.clone();
     let chorus_2 = Piece::from(wait_eight_beats() * 2);
-    let bridge = Piece::from(wait_eight_beats() * 4);
-    let verse_3 = Piece::from(wait_eight_beats() * 2);
+    let bridge = (
+        bridge_bass()
+    ) * (
+        groovy_drums_alt
+    ) * (
+        play_chord(from_guitar_frets(GUITAR_I), groove) + 
+        play_chord(from_guitar_frets(GUITAR_VI), groove) +
+        play_chord(from_guitar_frets(GUITAR_II_HALF_DIM), groove) + 
+        play_chord(from_guitar_frets(GUITAR_V_7), groove)
+    ) * 2;
+    let verse_3 = verse_1.clone();
+    let ending = brain_stew(true) * 2 *
+    (
+        (
+            drums(eighth(kick) + eighth(snare) + sixteenth(REST) + sixteenth(kick) + sixteenth(snare) + sixteenth(kick)) +
+            drums(eighth(kick) + eighth(snare) + sixteenth(REST) + sixteenth(kick) + sixteenth(snare) * 2)
+        ) * 5
+    ) * (
+        wait_eight_beats() + 
+        im_sad_your_back() + tired_of_being_alone()
+    );
+        
 
-    intro + verse_1 + prechorus_1
+    intro + verse_1 + prechorus_1 + verse_2 + prechorus_2 + bridge + verse_3 + ending
 }
 
 fn main() {
