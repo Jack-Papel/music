@@ -1,12 +1,20 @@
-mod sources;
+pub mod sources;
 
 use sources::*;
 
-use std::{fmt::Debug, ops::{Add, Mul}, sync::Arc, thread::{self, JoinHandle}};
+use std::{fmt::Debug, ops::{Add, Mul}, sync::Arc, thread::{self, JoinHandle}, time::Duration};
 
 use crate::{scales::tet12::{self, A4}, Line, Playable};
 
-
+/// Represents a musical note with duration, pitch/rest, and timbre
+/// 
+/// # Examples
+/// ```
+/// use music::note::{note_length_fns::*, timbre_fns::*, NoteKind, NotePitch};
+/// 
+/// // Create a quarter note C4 with piano timbre
+/// let note = piano(quarter(NotePitch(261.626)));
+/// ```
 #[derive(Clone, Copy)]
 pub struct Note(pub NoteLength, pub NoteKind, pub Timbre);
 
@@ -31,7 +39,7 @@ impl Debug for Note {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Timbre {
     Sine,
     Bass,
@@ -43,6 +51,7 @@ pub enum Timbre {
 impl Add<Note> for Note {
     type Output = Line;
 
+    #[expect(clippy::arithmetic_side_effects, reason = "Arithmetic Implementation")]
     fn add(self, rhs: Note) -> Self::Output {
         let self_line: Line = self.into();
         let rhs_line: Line = rhs.into(); 
@@ -53,6 +62,7 @@ impl Add<Note> for Note {
 impl Add<Line> for Note {
     type Output = Line;
 
+    #[expect(clippy::arithmetic_side_effects, reason = "Arithmetic Implementation")]
     fn add(self, rhs: Line) -> Self::Output {
         let self_line: Line = self.into();
         self_line + rhs
@@ -103,7 +113,7 @@ impl NotePitch {
         Self(self.0 * 2.0f32.powi(change))
     }
 
-    pub fn semitone(&self, change: i32) -> Self {
+    pub fn semitone(&self, change: i16) -> Self {
         Self(self.0 * 2.0f32.powf(change as f32 / 12.0))
     }
 }
@@ -134,6 +144,7 @@ pub mod note_length_fns {
         half, 8
     );
 
+    #[expect(clippy::arithmetic_side_effects, reason = "User's fault")]
     pub fn dotted(len_fn: impl Fn(NoteKind) -> Note) -> impl Fn(NoteKind) -> Note {
         Box::new(move |kind| {
             let len = len_fn(kind).0.0;
@@ -141,6 +152,7 @@ pub mod note_length_fns {
         })
     }
     
+    #[expect(clippy::arithmetic_side_effects, reason = "User's fault")]
     pub fn tie(len_fn1: impl Fn(NoteKind) -> Note, len_fn2: impl Fn(NoteKind) -> Note) -> impl Fn(NoteKind) -> Note {
         Box::new(move |kind| Note(NoteLength(len_fn1(kind).0.0 + len_fn2(kind).0.0), kind, Timbre::Sine))
     }
@@ -184,7 +196,7 @@ impl Playable for Note {
     fn length(&self) -> usize {
         self.0.0 as usize
     }
-    
+
     fn get_notes_at_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
         if instant == 0 {
             Some(*self).into_iter()
@@ -193,15 +205,17 @@ impl Playable for Note {
         }
     }
 
-    fn play(&self, output_handle: Arc<rodio::OutputStreamHandle>) -> JoinHandle<()> {
+    fn play(&self, output_handle: Arc<rodio::OutputStreamHandle>, beat_duration_ms: u64) -> JoinHandle<()> {
         if let NoteKind::Pitched { pitch, volume } = self.1 {
             let (length, timbre) = (self.0, self.2);
+            #[expect(clippy::arithmetic_side_effects, reason = "User's fault")]
+            let duration_ms = length.0 as u64 * beat_duration_ms;
 
             thread::spawn(move || {
                 let sink = rodio::Sink::try_new(&output_handle.clone()).unwrap();
-                
-                sink.append(get_source(length.0, pitch.0, timbre, volume));
-    
+                // For some reason, playing live is way louder than file output. 64 is arbitrary, but seems about right.
+                sink.append(get_source(duration_ms, pitch.0, timbre, volume / 64.0));
+                thread::sleep(Duration::from_millis(duration_ms));
                 sink.sleep_until_end();
             })
         } else {

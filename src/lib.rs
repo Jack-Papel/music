@@ -32,52 +32,99 @@
 //!     * Particulary dotted(eighth) returns a function which only accepts NoteKind, not 
 //!       impl Into<NoteKind>
 
+#![deny(clippy::arithmetic_side_effects)]
+#![warn(clippy::cast_possible_truncation, clippy::cast_possible_wrap, clippy::cast_precision_loss, clippy::cast_sign_loss)]
+#![deny(clippy::allow_attributes_without_reason)]
+#![deny(clippy::allow_attributes)]
+
 
 pub mod piece;
 pub mod note;
 pub mod scales;
+mod interactive;
+mod render_to_wav;
 
 use std::sync::Arc;
-use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::thread::JoinHandle;
 
 pub use piece::Piece;
 pub use piece::line::Line;
 pub use note::Note;
+
+pub use crate::interactive::InteractiveCli;
+
+/// Creates a configuration for this music library
+pub struct MusicPlayer<O: MusicOutput + Clone> {
+    /// Tempo in beats per minute (default: 300 BPM which gives 200ms per beat)
+    tempo_bpm: u32,
+    output_config: O,
+}
+
+impl<O: MusicOutput + Clone> MusicPlayer<O> {
+    /// Calculate milliseconds per beat based on BPM
+    pub fn beat_duration_ms(&self) -> u64 {
+        60_000u64.checked_div(self.tempo_bpm as u64).unwrap_or(u64::MAX)
+    }
+}
+
+impl MusicPlayer<LiveOutputConfig> {
+    pub fn new_live(tempo_bpm: u32, output_handle: Arc<rodio::OutputStreamHandle>) -> Self {
+        Self { 
+            tempo_bpm,
+            output_config: LiveOutputConfig { output_handle },
+        }
+    }
+
+    pub fn play<T: Playable + Clone + Send + Sync + 'static>(&self, piece: T) -> std::thread::JoinHandle<()> {
+        piece.play(self.output_config.output_handle.clone(), self.beat_duration_ms())
+    }
+}
+
+impl MusicPlayer<FileOutputConfig> {
+    pub fn new_file(tempo_bpm: u32, output_gain: f32, sample_rate: u32) -> Self {
+        Self { 
+            tempo_bpm,
+            output_config: FileOutputConfig { output_gain, sample_rate }
+        }
+    }
+
+    /* See render_to_wav.rs for implementation */
+}
 
 pub trait Playable {
     fn length(&self) -> usize;
 
     fn get_notes_at_instant(&self, instant: usize) -> impl Iterator<Item=Note>;
 
-    fn play(&self, output_handle: Arc<rodio::OutputStreamHandle>) -> JoinHandle<()>
-        where Self: Send + Sync + Clone + 'static
-    {
-        let piece = self.clone();
-
-        thread::spawn(move || {
-            let mut handles = Vec::new();
-            for instant in 0..piece.length() {
-                for note in piece.get_notes_at_instant(instant) {
-                    handles.push(note.play(output_handle.clone()));
-                }
-    
-                thread::sleep(Duration::from_millis(200));
-            }
-
-            for handle in handles {
-                let _ = handle.join();
-            }
-        })
-    }
+    fn play(&self, output_handle: Arc<rodio::OutputStreamHandle>, beat_duration_ms: u64) -> JoinHandle<()>
+        where Self: Send + Sync + Clone + 'static;
 }
 
 pub trait Pitchable {
     fn octave(&self, change: i32) -> Self
     where Self: Sized {
-        self.semitone(change * 12)
+        self.semitone(change.saturating_mul(12))
     }
 
     fn semitone(&self, change: i32) -> Self
     where Self: Sized;
 }
+
+pub trait MusicOutput {}
+
+#[derive(Clone)]
+pub struct FileOutputConfig {
+    /// Gain applied to the output audio (default: 1.0)
+    output_gain: f32,
+    /// Sample rate for audio generation (default: 44100 Hz)
+    sample_rate: u32,
+}
+
+#[derive(Clone)]
+pub struct LiveOutputConfig {
+    output_handle: Arc<rodio::OutputStreamHandle>,
+}
+
+impl MusicOutput for FileOutputConfig {}
+
+impl MusicOutput for LiveOutputConfig {}

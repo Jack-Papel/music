@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 lazy_static = "1.5.0"
 rodio = "0.20.1"
-iter_tools = "0.24.0"
+iter_tools = "0.29.0"
+hound = "3.5.1"

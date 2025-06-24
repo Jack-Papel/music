@@ -1,4 +1,7 @@
 use std::ops::{Add, Mul, Neg, Not};
+use std::sync::Arc;
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
 use crate::{note::{NoteKind, NoteLength}, Note, Playable};
 
@@ -27,11 +30,20 @@ impl Line {
         if extend_by == 0 {
             return self.clone()
         }
-        self.clone() + Note(
+        #[expect(clippy::arithmetic_side_effects, reason = "User is expected to handle this error")]
+        return self.clone() + Note(
             NoteLength(extend_by),
             NoteKind::Rest,
             crate::note::Timbre::Sine
         )
+    }
+    
+    pub fn volume(&self, volume: f32) -> Line {
+        Line {
+            notes: self.notes.iter().map(|note| note.volume(volume)).collect(),
+            pickup: self.pickup.iter().map(|note| note.volume(volume)).collect(),
+            hold_pickup: self.hold_pickup
+        }
     }
 }
 
@@ -68,6 +80,8 @@ impl Add<Piece> for Line {
     type Output = Piece;
 
     /// This implementation puts this line as the first line of the piece
+    #[expect(clippy::arithmetic_side_effects, reason = "Arithmetic implementation")]
+    #[expect(clippy::cast_possible_truncation, reason = "I don't want to deal with this right now")]
     fn add(self, rhs: Piece) -> Self::Output {
         if !rhs.0.is_empty() {
             let mut piece = rhs.clone();
@@ -88,6 +102,7 @@ impl Add<Piece> for Line {
 impl Add<Note> for Line {
     type Output = Line;
 
+    #[expect(clippy::arithmetic_side_effects, reason = "Arithmetic implementation")]
     fn add(self, rhs: Note) -> Self::Output {
         self + Line::new_unchecked(vec![rhs])
     }
@@ -96,6 +111,8 @@ impl Add<Note> for Line {
 impl Add<Line> for Line {
     type Output = Line;
 
+    #[expect(clippy::arithmetic_side_effects, reason = "Arithmetic implementation")]
+    #[expect(clippy::cast_possible_truncation, reason = "Manual Bounds Checking")]
     fn add(self, rhs: Line) -> Self::Output {
         let mut notes = self.notes.clone();
 
@@ -162,6 +179,7 @@ impl Add<Line> for Line {
 impl Mul<usize> for Line {
     type Output = Line;
 
+    #[expect(clippy::arithmetic_side_effects, reason = "Arithmetic implementation")]
     fn mul(self, rhs: usize) -> Self::Output {
         let mut current_line = self.clone();
 
@@ -183,6 +201,7 @@ impl Mul<Line> for Line {
 
 impl Playable for Line {
     /// Returns the length of this line without regard for the pickup
+    #[expect(clippy::arithmetic_side_effects, reason = "What am I supposed to do?")]
     fn length(&self) -> usize {
         let mut acc = 0;
         for note in self.notes.clone() {
@@ -191,6 +210,7 @@ impl Playable for Line {
         acc
     }
 
+    #[expect(clippy::arithmetic_side_effects, reason = "Manual bounds checking, almost always safe")]
     fn get_notes_at_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
         let mut time_acc = 0;
         for note in self.notes.clone() {
@@ -201,5 +221,24 @@ impl Playable for Line {
         }
 
         None.into_iter()
+    }
+
+    fn play(&self, output_handle: Arc<rodio::OutputStreamHandle>, beat_duration_ms: u64) -> JoinHandle<()> {
+        let line = self.clone();
+
+        thread::spawn(move || {
+            let mut handles = Vec::new();
+            for instant in 0..line.length() {
+                for note in line.get_notes_at_instant(instant) {
+                    handles.push(note.play(output_handle.clone(), beat_duration_ms));
+                }
+
+                thread::sleep(Duration::from_millis(beat_duration_ms));
+            }
+
+            for handle in handles {
+                let _ = handle.join();
+            }
+        })
     }
 }

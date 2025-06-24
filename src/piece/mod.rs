@@ -1,4 +1,4 @@
-use std::{fmt::Write, ops::{Add, Mul}};
+use std::{fmt::Write, ops::{Add, Mul}, sync::Arc, thread::{self, JoinHandle}, time::Duration};
 
 use iter_tools::{EitherOrBoth, Itertools};
 use line::Line;
@@ -13,6 +13,10 @@ pub struct Piece(pub Vec<Line>);
 impl Piece {
     pub fn new() -> Self {
         Default::default()
+    }
+
+    pub fn volume(&self, volume: f32) -> Self {
+        Piece(self.0.iter().map(|line| line.volume(volume)).collect())
     }
 }
 
@@ -35,11 +39,31 @@ impl Playable for Piece {
             .into_iter()
             .flat_map(move |l| l.get_notes_at_instant(instant).collect::<Vec<_>>())
     }
+
+    fn play(&self, output_handle: Arc<rodio::OutputStreamHandle>, beat_duration_ms: u64) -> JoinHandle<()> {
+        let piece = self.clone();
+
+        thread::spawn(move || {
+            let mut handles = Vec::new();
+            for instant in 0..piece.length() {
+                for note in piece.get_notes_at_instant(instant) {
+                    handles.push(note.play(output_handle.clone(), beat_duration_ms));
+                }
+
+                thread::sleep(Duration::from_millis(beat_duration_ms));
+            }
+
+            for handle in handles {
+                let _ = handle.join();
+            }
+        })
+    }
 }
 
 impl Piece {
     /// As opposed to [`Playable::get_notes_at_instant`], this gets any note which would
     /// be playing during a given instant, rather than the notes which start at a given instant.
+    #[expect(clippy::arithmetic_side_effects, reason = "Manual bounds checking, almost always safe")]
     fn get_notes_during_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
         self.0.clone()
             .into_iter()
@@ -69,9 +93,14 @@ impl Mul<Piece> for Piece {
 impl Mul<usize> for Piece {
     type Output = Piece;
 
+    #[expect(clippy::arithmetic_side_effects, reason = "Arithmetic implementation")]
     fn mul(self, rhs: usize) -> Self::Output {
+        if rhs == 0 {
+            return Piece::new();
+        }
+        
         let mut acc = self.clone();
-        for _ in 0..(rhs-1) {
+        for _ in 1..rhs {
             acc = acc + self.clone()
         }
         acc
@@ -81,6 +110,8 @@ impl Mul<usize> for Piece {
 impl Add<Piece> for Piece {
     type Output = Piece;
 
+    #[expect(clippy::arithmetic_side_effects, reason = "Arithmetic implementation")]
+    #[expect(clippy::cast_possible_truncation, reason = "I don't want to deal with this right now")]
     fn add(self, rhs: Piece) -> Self::Output {
         let self_length = self.length() as u16;
         let rhs_length = rhs.length() as u16;
@@ -102,16 +133,24 @@ impl Add<Piece> for Piece {
 impl Mul<Line> for Piece {
     type Output = Piece;
 
+    #[expect(clippy::cast_possible_truncation, reason = "I don't want to deal with this right now")]
     fn mul(self, rhs: Line) -> Self::Output {
         let self_len = self.length();
         let rhs_len = rhs.length();
         let new_len = usize::max(self_len, rhs_len);
-        Piece([
-            self.0.into_iter()
-                .map(|line| line.extend((new_len - self_len) as u16))
-                .collect(), 
-            vec![rhs.extend((new_len - rhs_len) as u16)]
-        ].concat())
+        
+        // Extend pieces to same length for layering
+        let extended_self: Vec<_> = self.0.into_iter()
+            .map(|line| {
+                let padding = new_len.saturating_sub(self_len) as u16;
+                line.extend(padding)
+            })
+            .collect();
+        
+        let padding = new_len.saturating_sub(rhs_len) as u16;
+        let extended_rhs = vec![rhs.extend(padding)];
+        
+        Piece([extended_self, extended_rhs].concat())
     }
 }
 
@@ -129,16 +168,18 @@ impl std::fmt::Display for Piece {
 
         for bar_group in 0..self.length().div_ceil(64) {
             let (highest_semitone, lowest_semitone) = {
-                let (mut highest, mut lowest) = (i32::MIN, i32::MAX);
+                let (mut highest, mut lowest) = (i16::MIN, i16::MAX);
+                #[expect(clippy::arithmetic_side_effects, reason = "Guaranteed to be safe, manual bounds checking")]
                 for time in (bar_group * 64)..(bar_group * 64 + 64) {
                     for note in self.get_notes_during_instant(time) {
                         if let NoteKind::Pitched { pitch: NotePitch(frequency), .. } = note.1 {
                             let semitone_diff_from_c4 = 12.0 * f32::log2(frequency / C4.0);
 
-                            if highest < semitone_diff_from_c4 as i32 {
-                                highest = semitone_diff_from_c4 as i32;
-                            } else if lowest > semitone_diff_from_c4 as i32 {
-                                lowest = semitone_diff_from_c4 as i32;
+                            #[expect(clippy::cast_possible_truncation, reason = "Intentional precision loss")]
+                            if highest < semitone_diff_from_c4 as i16 {
+                                highest = semitone_diff_from_c4 as i16;
+                            } else if lowest > semitone_diff_from_c4 as i16 {
+                                lowest = semitone_diff_from_c4 as i16;
                             }
                         }
                     }
@@ -147,6 +188,7 @@ impl std::fmt::Display for Piece {
             };
             f.write_str(&"═".repeat(74))?;
             f.write_str("╗\n")?;
+            #[expect(clippy::arithmetic_side_effects, reason = "User's fault")]
             for semitone in (lowest_semitone - 2..=highest_semitone + 2).rev() {
                 let pitch = C4.semitone(semitone);
                 let mut line_str = String::new();
@@ -207,6 +249,7 @@ impl std::fmt::Display for Piece {
                 let mut line_str = String::new();
 
                 for bar_group_time in 0..64 {
+                    #[expect(clippy::arithmetic_side_effects, reason = "User's fault")]
                     let time = 64 * bar_group + bar_group_time;
 
                     // Add barline
