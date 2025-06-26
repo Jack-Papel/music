@@ -1,14 +1,10 @@
 //! # Final Song
 //! By Jack Papel
 //! 
-//! In this file is the song I created for my final using this software.
-//! If you want to see documentation for how this library works, it is sparse, but there is a short explanation in lib.rs
-//! and a more detailed explanation in the README.md file.
-//! 
-//! If you want to test the interactive TUI, you can run this file with the `interactive-tui` feature enabled.
+//! In this file is the song I created for my final using this library.
+//! The lyrics aren't in here though.
 
 use symphoxy::prelude::*;
-#[cfg(feature = "interactive-tui")]
 use symphoxy::InteractiveTui;
 
 const BASS_VOL: f32 = 0.3;
@@ -214,36 +210,6 @@ fn get_final_song() -> Piece {
     intro + verse_1 + prechorus_1 + verse_2 + prechorus_2 + bridge + verse_3 + ending
 }
 
-fn mary_had_a_little_lamb() -> impl Into<Piece> {
-    let c_major = symphoxy::scales::MajorScale(C4);
-    let [c4, d4, e4, g4] = c_major.get_degrees([1, 2, 3, 5]);
-    
-    piano(
-        quarter(e4) + quarter(d4) + quarter(c4) + quarter(d4) +
-        quarter(e4) * 3 + quarter(REST) +
-        quarter(d4) * 3 + quarter(REST) +
-        quarter(e4) + quarter(g4) * 2 + quarter(REST) +
-        quarter(e4) + quarter(d4) + quarter(c4) + quarter(d4) +
-        quarter(e4) * 4 + quarter(d4) * 2 +
-        quarter(e4) + quarter(d4) + quarter(c4) + quarter(REST)
-        + quarter(c4.octave(1))
-    )
-}
-
 fn main() {
-    #[cfg(feature = "interactive-tui")]
-    InteractiveTui::start(mary_had_a_little_lamb().into());
-    #[cfg(not(feature = "interactive-tui"))]
-    {
-        use std::sync::Arc;
-
-        use symphoxy::MusicPlayer;
-
-        let (_output_stream, output_handle) = rodio::OutputStream::try_default().unwrap();
-        let output_handle = Arc::new(output_handle);
-
-        let player = MusicPlayer::new_live(300, output_handle);
-
-        let _ = player.play(mary_had_a_little_lamb().into()).join();
-    }
+    InteractiveTui::start(get_final_song());
 }
