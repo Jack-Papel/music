@@ -1,6 +1,6 @@
 use std::{fmt::Write, ops::{Add, Mul}};
 
-use iter_tools::{EitherOrBoth, Itertools};
+use itertools::{EitherOrBoth, Itertools};
 use line::Line;
 
 use crate::{note::{NoteKind, NotePitch, Timbre}, scales::tet12::{self, A4, C4}, Note, Tet12};
