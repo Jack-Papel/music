@@ -244,6 +244,6 @@ fn main() {
 
         let player = MusicPlayer::new_live(300, output_handle);
 
-        player.play(mary_had_a_little_lamb().into()).join();
+        let _ = player.play(mary_had_a_little_lamb().into()).join();
     }
 }

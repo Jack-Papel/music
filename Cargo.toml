@@ -11,6 +11,9 @@ keywords = ["music", "audio", "synthesizer"]
 authors = ["Jack Papel"]
 categories = ["multimedia::audio"]
 
+[lib]
+crate-type = ["lib"]
+
 [dependencies]
 lazy_static = "1.5.0"
 rodio = { version = "0.20.1", optional = true }
