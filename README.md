@@ -22,7 +22,7 @@ Docs are sparse at the moment, but below is a quick-start guide.
 
 ### Trying it out
 
-If you just want to try things out, you can clone this repository - there is a `main.rs` file that is already set up with everything you might need.
+If you just want to try things out, you can clone this repository - there are a few examples that are already set up.
 
 First, clone the repository:
 
