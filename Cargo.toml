@@ -1,9 +1,9 @@
 [package]
 name = "symphoxy"
 description = "A music-as-code library for rust."
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
-license-file = "LICENSE"
+license = "MPL-2.0"
 homepage = "https://www.jackpapel.com/"
 repository = "https://www.github.com/jackpapel/symphoxy"
 readme = "README.md"
