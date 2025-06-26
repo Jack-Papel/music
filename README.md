@@ -30,9 +30,14 @@ First, clone the repository:
 git clone https://www.github.com/jack-papel/symphoxy
 ```
 
-In [main.rs](https://github.com/Jack-Papel/symphoxy/blob/main/src/main.rs) there is a version of Mary Had a Little Lamb, and a song I presented for a final for one of my classes. By default, the main function will play the former. Play around with the code to see how to make changes and create music.
+In [the examples directory](https://github.com/Jack-Papel/symphoxy/tree/main/examples) there is a version of Mary Had a Little Lamb, and a song I presented for a final for one of my classes. Play around with the code to see how to make changes and create music.
 
-To play the music generated, run `cargo run`. This will immediately play the piece when the program is run. If instead, you want to be able to first edit configurations or write to a wav file, run with the `--features interactive-tui` flag. This will show a text user interface in your terminal that gives you more control over the song's playback.
+To play the music generated, run `cargo run --example <example_name>`. This will launch an interactive TUI in your terminal that will allow you to either play the piece or save it to a wav file. If you want this capability when importing this crate into your own project, enable the `interactive-tui` feature in your Cargo.toml:
+
+```toml
+[dependencies]
+symphoxy = { version = "*", features = "interactive-tui" }
+```
 
 If you want to integrate this crate in your own project, follow the quick start guide below.
 
