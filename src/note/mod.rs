@@ -6,7 +6,7 @@ use crate::{A4, Line};
 /// 
 /// # Examples
 /// ```
-/// use music::note::{note_length_fns::*, timbre_fns::*, NoteKind, NotePitch};
+/// use symphoxy::prelude::*;
 /// 
 /// // Create a quarter note C4 with piano timbre
 /// let note = piano(quarter(NotePitch(261.626)));
