@@ -1,13 +1,13 @@
-use crate::{interactive::{CliSelectable, InteractiveCli, PlayResult, SelectionInfo, Selections}, FileOutputConfig, MusicPlayer, Piece};
+use crate::{interactive::{TuiSelectable, InteractiveTui, PlayResult, SelectionInfo, Selections}, play::FileOutputConfig, MusicPlayer, Piece};
 
 
-impl InteractiveCli {
+impl InteractiveTui {
     pub(super) fn handle_file_mode(piece: &Piece) -> PlayResult {
         let mut player = MusicPlayer::new_file(300, 1.0, 44100);
-        let mut path = InteractiveCli::get_absolute_path("./output.wav");
+        let mut path = InteractiveTui::get_absolute_path("./output.wav");
 
         loop {
-            let choice = InteractiveCli::get_input::<FileModeSelection>(FileModeSelectionContext {
+            let choice = InteractiveTui::get_input::<FileModeSelection>(FileModeSelectionContext {
                 tempo: player.tempo_bpm,
                 path: path.as_ref().ok().cloned(),
                 output_config: player.output_config.clone(),
@@ -25,19 +25,19 @@ impl InteractiveCli {
                     }
                 }
                 FileModeSelection::ChangeTempo => {
-                    let new_tempo = InteractiveCli::get_range_input::<10, 1000>("Enter tempo in BPM");
+                    let new_tempo = InteractiveTui::get_range_input::<10, 1000>("Enter tempo in BPM");
                     player.tempo_bpm = new_tempo;
                 }
                 FileModeSelection::ChangeOutputGain => {
-                    let new_gain = InteractiveCli::get_positive_float_input("Enter output gain");
+                    let new_gain = InteractiveTui::get_positive_float_input("Enter output gain");
                     player.output_config.output_gain = new_gain;
                 }
                 FileModeSelection::ChangeSampleRate => {
-                    let new_sample_rate = InteractiveCli::get_range_input::<8000, 192000>("Enter sample rate");
+                    let new_sample_rate = InteractiveTui::get_range_input::<8000, 192000>("Enter sample rate");
                     player.output_config.sample_rate = new_sample_rate;
                 }
                 FileModeSelection::ChangeOutputPath => {
-                    let new_path = InteractiveCli::get_path_input("Enter output file path");
+                    let new_path = InteractiveTui::get_path_input("Enter output file path");
                     path = Ok(new_path);
                 }
                 FileModeSelection::Exit => return PlayResult::Exit,
@@ -58,13 +58,13 @@ enum FileModeSelection {
     Continue,
 }
 
-struct  FileModeSelectionContext {
+struct FileModeSelectionContext {
     tempo: u32,
     path: Option<String>,
     output_config: FileOutputConfig,
 }
 
-impl CliSelectable for FileModeSelection {
+impl TuiSelectable for FileModeSelection {
     type Context = FileModeSelectionContext;
 
     fn get_selections(context: Self::Context) -> Selections<Self> {

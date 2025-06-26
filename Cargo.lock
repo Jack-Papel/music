@@ -398,16 +398,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
-name = "music"
-version = "0.1.0"
-dependencies = [
- "hound",
- "iter_tools",
- "lazy_static",
- "rodio",
-]
-
-[[package]]
 name = "ndk"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -674,6 +664,16 @@ dependencies = [
  "lazy_static",
  "log",
  "symphonia-core",
+]
+
+[[package]]
+name = "symphoxy"
+version = "0.1.0"
+dependencies = [
+ "hound",
+ "iter_tools",
+ "lazy_static",
+ "rodio",
 ]
 
 [[package]]

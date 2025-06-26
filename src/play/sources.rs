@@ -2,9 +2,7 @@ use std::{io::BufReader, time::Duration, path::Path};
 
 use rodio::{source::SineWave, Decoder, Source};
 
-use crate::scales::tet12::C4;
-
-use super::Timbre;
+use crate::{note::Timbre, Tet12, C4};
 
 
 pub fn get_source(duration_ms: u64, frequency: f32, timbre: Timbre, volume: f32) -> Box<dyn Source<Item=f32> + Send> {

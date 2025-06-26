@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use crate::{interactive::{CliSelectable, InteractiveCli, PlayResult, SelectionInfo, Selections}, MusicPlayer, Piece};
+use crate::{interactive::{TuiSelectable, InteractiveTui, PlayResult, SelectionInfo, Selections}, MusicPlayer, Piece};
 
-impl InteractiveCli {
+impl InteractiveTui {
     pub(super) fn handle_live_mode(piece: &Piece) -> PlayResult {
         let Ok((_output_stream, output_handle)) = rodio::OutputStream::try_default() else {
             println!("Failed to get default output stream. Please ensure your audio output is configured correctly.");
@@ -13,14 +13,14 @@ impl InteractiveCli {
         let mut player = MusicPlayer::new_live(300, output_handle);
         let mut show_score = false;
         loop {
-            let choice = InteractiveCli::get_input::<LiveModeSelection>(LiveModeSelectionContext {
+            let choice = InteractiveTui::get_input::<LiveModeSelection>(LiveModeSelectionContext {
                 show_score,
                 tempo: player.tempo_bpm as u64,
             });
 
             match choice {
                 LiveModeSelection::ChangeTempo => {
-                    let new_tempo = InteractiveCli::get_range_input::<10, 1000>("Enter tempo in BPM");
+                    let new_tempo = InteractiveTui::get_range_input::<10, 1000>("Enter tempo in BPM");
 
                     player.tempo_bpm = new_tempo;
                     println!("Tempo changed to {} BPM.", new_tempo);
@@ -58,7 +58,7 @@ struct LiveModeSelectionContext {
     tempo: u64,
 }
 
-impl CliSelectable for LiveModeSelection {
+impl TuiSelectable for LiveModeSelection {
     type Context = LiveModeSelectionContext;
 
     fn get_selections(context: Self::Context) -> Selections<Self> {

@@ -1,18 +1,22 @@
 use crate::Piece;
 
+#[cfg(feature = "live-output")]
 mod live_mode;
+#[cfg(feature = "wav-output")]
 mod file_mode;
 
-pub enum InteractiveCli {}
+pub enum InteractiveTui {}
 
-impl InteractiveCli {
+impl InteractiveTui {
     pub fn start(piece: Piece) {
         loop {
-            let mode = InteractiveCli::get_input::<Mode>(());
+            let mode = InteractiveTui::get_input::<Mode>(());
 
             let result = match mode {
-                Mode::Live => InteractiveCli::handle_live_mode(&piece),
-                Mode::File => InteractiveCli::handle_file_mode(&piece)
+                #[cfg(feature = "live-output")]
+                Mode::Live => InteractiveTui::handle_live_mode(&piece),
+                #[cfg(feature = "wav-output")]
+                Mode::File => InteractiveTui::handle_file_mode(&piece)
             };
 
             match result {
@@ -25,7 +29,7 @@ impl InteractiveCli {
     }
 
     #[expect(clippy::arithmetic_side_effects, reason = "No selection will have usize::MAX options")]
-    fn get_input<T: CliSelectable>(context: T::Context) -> T {
+    fn get_input<T: TuiSelectable>(context: T::Context) -> T {
         let selections = T::get_selections(context);
         let options = selections.options;
         println!("{}:", selections.description);
@@ -81,6 +85,7 @@ impl InteractiveCli {
         }
     }
 
+    #[cfg(feature = "wav-output")]
     fn get_positive_float_input(ask: &str) -> f32 {
         println!("{} (Between 0.0 and infinity):", ask);
         loop {
@@ -100,6 +105,7 @@ impl InteractiveCli {
         }
     }
     
+    #[cfg(feature = "wav-output")]
     fn get_path_input(ask: &str) -> String {
         println!("{}:", ask);
         loop {
@@ -119,6 +125,7 @@ impl InteractiveCli {
         }
     }
 
+    #[cfg(feature = "wav-output")]
     fn get_absolute_path(path: &str) -> Result<String, String> {
         let path_input = std::path::Path::new(path);
         let Some(file_name) = path_input.file_name() else {
@@ -146,7 +153,7 @@ enum PlayResult {
     Exit,
 }
 
-trait CliSelectable: Sized + Copy {
+trait TuiSelectable: Sized + Copy {
     type Context;
 
     fn get_selections(context: Self::Context) -> Selections<Self>;
@@ -165,11 +172,13 @@ struct SelectionInfo {
 
 #[derive(Clone, Copy)]
 enum Mode {
+    #[cfg(feature = "live-output")]
     Live,
+    #[cfg(feature = "wav-output")]
     File
 }
 
-impl CliSelectable for Mode {
+impl TuiSelectable for Mode {
     type Context = ();
 
     fn get_selections(_context: Self::Context) -> Selections<Self> {
@@ -177,7 +186,10 @@ impl CliSelectable for Mode {
             description: "Select an option".to_string(),
             default: None,
             options: vec![
+                #[cfg(feature = "live-output")]
                 (SelectionInfo { name: "Play".to_string(), description: "Play music live".to_string() }, Mode::Live),
+
+                #[cfg(feature = "wav-output")]
                 (SelectionInfo { name: "Write".to_string(), description: "Render music to a WAV file".to_string() }, Mode::File),
             ]
         }

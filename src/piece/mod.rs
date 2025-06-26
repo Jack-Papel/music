@@ -1,9 +1,9 @@
-use std::{fmt::Write, ops::{Add, Mul}, sync::Arc, thread::{self, JoinHandle}, time::Duration};
+use std::{fmt::Write, ops::{Add, Mul}};
 
 use iter_tools::{EitherOrBoth, Itertools};
 use line::Line;
 
-use crate::{note::{NoteKind, NotePitch, Timbre}, scales::tet12::{self, A4, C4}, Note, Playable};
+use crate::{note::{NoteKind, NotePitch, Timbre}, scales::tet12::{self, A4, C4}, Note, Tet12};
 
 pub mod line;
 
@@ -26,42 +26,20 @@ impl From<Line> for Piece {
     }
 }
 
-impl Playable for Piece {
-    fn length(&self) -> usize {
-        self.0.iter()
-            .map(|line| line.length())
-            .max()
-            .unwrap_or_default()
+impl From<Note> for Piece {
+    fn from(value: Note) -> Self {
+        Piece(vec![Line::new_unchecked(vec![value])])
     }
+}
 
-    fn get_notes_at_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
+impl Piece {
+    pub(crate) fn get_notes_at_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
         self.0.clone()
             .into_iter()
             .flat_map(move |l| l.get_notes_at_instant(instant).collect::<Vec<_>>())
     }
 
-    fn play(&self, output_handle: Arc<rodio::OutputStreamHandle>, beat_duration_ms: u64) -> JoinHandle<()> {
-        let piece = self.clone();
-
-        thread::spawn(move || {
-            let mut handles = Vec::new();
-            for instant in 0..piece.length() {
-                for note in piece.get_notes_at_instant(instant) {
-                    handles.push(note.play(output_handle.clone(), beat_duration_ms));
-                }
-
-                thread::sleep(Duration::from_millis(beat_duration_ms));
-            }
-
-            for handle in handles {
-                let _ = handle.join();
-            }
-        })
-    }
-}
-
-impl Piece {
-    /// As opposed to [`Playable::get_notes_at_instant`], this gets any note which would
+    /// As opposed to `get_notes_at_instant`, this gets any note which would
     /// be playing during a given instant, rather than the notes which start at a given instant.
     #[expect(clippy::arithmetic_side_effects, reason = "Manual bounds checking, almost always safe")]
     fn get_notes_during_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
@@ -79,6 +57,13 @@ impl Piece {
 
                 None
             })
+    }
+
+    pub fn length(&self) -> usize {
+        self.0.iter()
+            .map(|line| line.length())
+            .max()
+            .unwrap_or_default()
     }
 }
 
@@ -224,10 +209,10 @@ impl std::fmt::Display for Piece {
                     };
 
                     let note_matches_line = |note: &Note| {
-                        !matches!(note.2, Timbre::Drums) &&
                         match note.1 {
                             NoteKind::Rest => false,
-                            NoteKind::Pitched{ pitch: note_pitch, .. } => 
+                            NoteKind::Pitched{ pitch: note_pitch, timbre, .. } => 
+                                !matches!(timbre, Timbre::Drums) && 
                                 (note_pitch.0 / pitch.0 - 1.0).abs() < (2.0f32.powf(1.0/24.0) - 1.0)
                         }
                     };
@@ -263,9 +248,10 @@ impl std::fmt::Display for Piece {
                     }
 
                     let note_matches_line = |note: &Note| {
-                        matches!(note.2, crate::note::Timbre::Drums) && match note.1 {
+                        match note.1 {
                             NoteKind::Rest => false,
-                            NoteKind::Pitched{ pitch, .. } => {
+                            NoteKind::Pitched{ pitch, timbre, .. } => {
+                                matches!(timbre, crate::note::Timbre::Drums) &&
                                 match kind {
                                     "crash" => pitch.0 > C4.octave(1).semitone(6).0,
                                     "hi-hat" => C4.octave(1).semitone(6).0 > pitch.0 && pitch.0 > C4.semitone(6).0,

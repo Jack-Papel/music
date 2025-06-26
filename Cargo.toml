@@ -1,10 +1,24 @@
 [package]
-name = "music"
+name = "symphoxy"
+description = "A music-as-code library for rust."
 version = "0.1.0"
 edition = "2021"
+license-file = "LICENSE"
+homepage = "https://www.jackpapel.com/"
+repository = "https://www.github.com/jackpapel/symphoxy"
+readme = "README.md"
+keywords = ["music", "audio", "synthesizer"]
+authors = ["Jack Papel"]
+categories = ["multimedia::audio"]
 
 [dependencies]
 lazy_static = "1.5.0"
-rodio = "0.20.1"
+rodio = { version = "0.20.1", optional = true }
 iter_tools = "0.29.0"
-hound = "3.5.1"
+hound = { version = "3.5.1", optional = true }
+
+[features]
+default = ["live-output", "wav-output"]
+live-output = ["dep:rodio"]
+wav-output = ["dep:hound", "dep:rodio"]
+interactive-tui = []

@@ -25,10 +25,6 @@ pub fn get_note_name(note: NotePitch, a4: NotePitch) -> String {
     out
 }
 
-pub fn map_semitones_to_pitches<const N: usize>(root: NotePitch, semitones: [i16;N]) -> [NotePitch;N] {
-    semitones.map(|s| root.semitone(s))
-}
-
 pub struct MajorScale(pub NotePitch);
 
 pub const A4: NotePitch = NotePitch(440.0);
@@ -36,7 +32,7 @@ pub const C4: NotePitch = NotePitch(261.626);
 
 impl Scale for MajorScale {
     #[expect(clippy::cast_possible_truncation, clippy::cast_precision_loss, reason = "Willing to accept some precision loss here")]
-    fn get_pitch(&self, degree: isize) -> NotePitch {
+    fn get_degree(&self, degree: isize) -> NotePitch {
         #[expect(clippy::arithmetic_side_effects, reason = "Manual overflow checking")]
         let adjusted_degree = if degree > 0 {
             degree - 1
@@ -56,5 +52,21 @@ impl Scale for MajorScale {
         let pitch = (self.0.0 as f64).mul(factor) as f32;
 
         NotePitch(pitch)
+    }
+}
+
+pub trait Tet12 {
+    fn octave(&self, change: i32) -> Self;
+    fn semitone(&self, change: i16) -> Self;
+}
+
+
+impl Tet12 for NotePitch {
+    fn octave(&self, change: i32) -> Self {
+        Self(self.0 * 2.0f32.powi(change))
+    }
+
+    fn semitone(&self, change: i16) -> Self {
+        Self(self.0 * 2.0f32.powf(change as f32 / 12.0))
     }
 }

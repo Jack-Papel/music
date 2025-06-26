@@ -1,9 +1,6 @@
 use std::ops::{Add, Mul, Neg, Not};
-use std::sync::Arc;
-use std::thread::{self, JoinHandle};
-use std::time::Duration;
 
-use crate::{note::{NoteKind, NoteLength}, Note, Playable};
+use crate::{note::{NoteKind, NoteLength}, Note};
 
 use super::Piece;
 
@@ -33,9 +30,11 @@ impl Line {
         #[expect(clippy::arithmetic_side_effects, reason = "User is expected to handle this error")]
         return self.clone() + Note(
             NoteLength(extend_by),
-            NoteKind::Rest,
-            crate::note::Timbre::Sine
+            NoteKind::Rest
         )
+    }
+    pub fn length(&self) -> usize {
+        self.notes.iter().map(|note| note.0.0 as usize).sum()
     }
     
     pub fn volume(&self, volume: f32) -> Line {
@@ -44,6 +43,19 @@ impl Line {
             pickup: self.pickup.iter().map(|note| note.volume(volume)).collect(),
             hold_pickup: self.hold_pickup
         }
+    }
+
+    #[expect(clippy::arithmetic_side_effects, reason = "Manual bounds checking, almost always safe")]
+    pub(crate) fn get_notes_at_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
+        let mut time_acc = 0;
+        for note in self.notes.clone() {
+            if time_acc == instant {
+                return Some(note).into_iter();
+            }
+            time_acc += note.0.0 as usize
+        }
+
+        None.into_iter()
     }
 }
 
@@ -135,8 +147,7 @@ impl Add<Line> for Line {
                 notes_to_remove += 1;
                 note_to_add = Some(Note(
                     NoteLength(note.0.0 - (pickup_length - time_removed) as u16),
-                    note.1,
-                    note.2
+                    note.1
                 ));
                 break;
             }
@@ -160,8 +171,7 @@ impl Add<Line> for Line {
 
                 notes[last_index] = Note(
                     NoteLength(last_note.0.0 + rhs_notes[0].0.0),
-                    last_note.1,
-                    last_note.2
+                    last_note.1
                 );
 
                 rhs_notes.remove(0);
@@ -196,49 +206,5 @@ impl Mul<Line> for Line {
 
     fn mul(self, rhs: Line) -> Self::Output {
         Piece(vec![self, rhs])
-    }
-}
-
-impl Playable for Line {
-    /// Returns the length of this line without regard for the pickup
-    #[expect(clippy::arithmetic_side_effects, reason = "What am I supposed to do?")]
-    fn length(&self) -> usize {
-        let mut acc = 0;
-        for note in self.notes.clone() {
-            acc += note.0.0 as usize;
-        }
-        acc
-    }
-
-    #[expect(clippy::arithmetic_side_effects, reason = "Manual bounds checking, almost always safe")]
-    fn get_notes_at_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
-        let mut time_acc = 0;
-        for note in self.notes.clone() {
-            if time_acc == instant {
-                return Some(note).into_iter();
-            }
-            time_acc += note.0.0 as usize
-        }
-
-        None.into_iter()
-    }
-
-    fn play(&self, output_handle: Arc<rodio::OutputStreamHandle>, beat_duration_ms: u64) -> JoinHandle<()> {
-        let line = self.clone();
-
-        thread::spawn(move || {
-            let mut handles = Vec::new();
-            for instant in 0..line.length() {
-                for note in line.get_notes_at_instant(instant) {
-                    handles.push(note.play(output_handle.clone(), beat_duration_ms));
-                }
-
-                thread::sleep(Duration::from_millis(beat_duration_ms));
-            }
-
-            for handle in handles {
-                let _ = handle.join();
-            }
-        })
     }
 }

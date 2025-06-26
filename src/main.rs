@@ -1,10 +1,15 @@
 //! # Final Song
 //! By Jack Papel
 //! 
-//! In this file is the song I'm creating for my final using this software.
-//! If you want to see documentation for how this library works, it is sparse, but there is a short explainer in lib.rs
+//! In this file is the song I created for my final using this software.
+//! If you want to see documentation for how this library works, it is sparse, but there is a short explanation in lib.rs
+//! and a more detailed explanation in the README.md file.
+//! 
+//! If you want to test the interactive TUI, you can run this file with the `interactive-tui` feature enabled.
 
-use music::{note::{note_length_fns::*, timbre_fns::*, NoteKind, NotePitch, REST}, scales::tet12::{map_semitones_to_pitches, C4}, InteractiveCli, Line, Piece};
+use symphoxy::prelude::*;
+#[cfg(feature = "interactive-tui")]
+use symphoxy::InteractiveTui;
 
 const BASS_VOL: f32 = 0.3;
 const DRUM_VOL: f32 = 4.0;
@@ -72,7 +77,14 @@ fn wait_eight_beats() -> Line {
 fn from_guitar_frets(frets: [i16; 6]) -> [NotePitch; 6] {
     let (e_string, b_string, g_string, d_string, a_string, low_e_string) = (4, -1, -5, -10, -15, -20);
 
-    map_semitones_to_pitches(C4, [e_string + frets[0], b_string + frets[1], g_string + frets[2], d_string + frets[3], a_string + frets[4], low_e_string + frets[5]])
+    [
+        e_string + frets[0],
+        b_string + frets[1],
+        g_string + frets[2],
+        d_string + frets[3],
+        a_string + frets[4],
+        low_e_string + frets[5]
+    ].map(|semitone| C4.semitone(semitone))
 }
 
 const GUITAR_I: [i16;6] = [-1, 1, 1, 1, -1, -1];
@@ -202,6 +214,36 @@ fn get_final_song() -> Piece {
     intro + verse_1 + prechorus_1 + verse_2 + prechorus_2 + bridge + verse_3 + ending
 }
 
+fn mary_had_a_little_lamb() -> impl Into<Piece> {
+    let c_major = symphoxy::scales::MajorScale(C4);
+    let [c4, d4, e4, g4] = c_major.get_degrees([1, 2, 3, 5]);
+    
+    piano(
+        quarter(e4) + quarter(d4) + quarter(c4) + quarter(d4) +
+        quarter(e4) * 3 + quarter(REST) +
+        quarter(d4) * 3 + quarter(REST) +
+        quarter(e4) + quarter(g4) * 2 + quarter(REST) +
+        quarter(e4) + quarter(d4) + quarter(c4) + quarter(d4) +
+        quarter(e4) * 4 + quarter(d4) * 2 +
+        quarter(e4) + quarter(d4) + quarter(c4) + quarter(REST)
+        + quarter(c4.octave(1))
+    )
+}
+
 fn main() {
-    InteractiveCli::start(get_final_song());
+    #[cfg(feature = "interactive-tui")]
+    InteractiveTui::start(mary_had_a_little_lamb().into());
+    #[cfg(not(feature = "interactive-tui"))]
+    {
+        use std::sync::Arc;
+
+        use symphoxy::MusicPlayer;
+
+        let (_output_stream, output_handle) = rodio::OutputStream::try_default().unwrap();
+        let output_handle = Arc::new(output_handle);
+
+        let player = MusicPlayer::new_live(300, output_handle);
+
+        player.play(mary_had_a_little_lamb().into()).join();
+    }
 }

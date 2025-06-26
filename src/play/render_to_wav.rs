@@ -12,10 +12,11 @@
 
 use std::ops::Div;
 
-use crate::{FileOutputConfig, MusicPlayer, Playable};
+use crate::{play::{FileOutputConfig, Playable}, MusicPlayer};
 
 
 impl MusicPlayer<FileOutputConfig> {
+    #[expect(private_bounds, reason = "Only internal types should be playable")]
     pub fn render_to_wav<T: Playable + Clone + Send + Sync + 'static>(&self, piece: T, path: &str) {
         let FileOutputConfig { output_gain, sample_rate } = self.output_config;
         let beat_duration_ms = self.beat_duration_ms();
@@ -30,11 +31,10 @@ impl MusicPlayer<FileOutputConfig> {
         for instant in 0..length {
             let notes: Vec<_> = piece.get_notes_at_instant(instant).collect();
             for note in notes {
-                if let crate::note::NoteKind::Pitched { pitch, volume } = note.1 {
+                if let crate::note::NoteKind::Pitched { pitch, timbre, volume } = note.1 {
                     let duration_ms = (note.0.0 as u64).saturating_mul(beat_duration_ms);
                     let frequency = pitch.0;
-                    let timbre = note.2;
-                    let src = crate::note::sources::get_source(duration_ms, frequency, timbre, volume);
+                    let src = super::sources::get_source(duration_ms, frequency, timbre, volume);
                     let native_channels = src.channels() as usize;
                     if native_channels > max_channels {
                         max_channels = native_channels;
@@ -50,11 +50,10 @@ impl MusicPlayer<FileOutputConfig> {
             let start_ms = (instant as u64).saturating_mul(beat_duration_ms);
             for note in notes {
                 match note.1 {
-                    crate::note::NoteKind::Pitched { pitch, volume } => {
+                    crate::note::NoteKind::Pitched { pitch, timbre, volume } => {
                         let duration_ms = (note.0.0 as u64).saturating_mul(beat_duration_ms);
                         let frequency = pitch.0;
-                        let timbre = note.2;
-                        let src = crate::note::sources::get_source(duration_ms, frequency, timbre, volume);
+                        let src = super::sources::get_source(duration_ms, frequency, timbre, volume);
                         let native_sample_rate = src.sample_rate();
                         let native_channels = src.channels() as usize;
                         let note_samples = (sample_rate as u64).saturating_mul(duration_ms).div(1000).try_into().unwrap_or(usize::MAX);
