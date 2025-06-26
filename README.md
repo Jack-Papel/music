@@ -30,7 +30,7 @@ First, clone the repository:
 git clone https://www.github.com/jack-papel/symphoxy
 ```
 
-In [main.rs][src/main.rs] there is a version of Mary Had a Little Lamb, and a song I presented for a final for one of my classes. By default, the main function will play the former. Play around with the code to see how to make changes and create music.
+In [main.rs](https://github.com/Jack-Papel/symphoxy/blob/main/src/main.rs) there is a version of Mary Had a Little Lamb, and a song I presented for a final for one of my classes. By default, the main function will play the former. Play around with the code to see how to make changes and create music.
 
 To play the music generated, run `cargo run`. This will immediately play the piece when the program is run. If instead, you want to be able to first edit configurations or write to a wav file, run with the `--features interactive-tui` flag. This will show a text user interface in your terminal that gives you more control over the song's playback.
 
@@ -138,4 +138,4 @@ Because of this flexibility, it's easy to organize your song however makes the m
 
 ## License
 
-Symphoxy is free and open source software. See [LICENSE][LICENSE] for usage information.
+Symphoxy is free and open source software. See [LICENSE](https://github.com/Jack-Papel/symphoxy/blob/main/LICENSE) for usage information.
