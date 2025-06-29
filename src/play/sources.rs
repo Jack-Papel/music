@@ -16,6 +16,38 @@ fn get_dyn_source(duration_ms: u64, frequency: f32, timbre: Timbre) -> Box<dyn S
         Timbre::Piano => get_piano_source(duration_ms, frequency),
         Timbre::ElectricGuitar => get_electric_guitar_source(duration_ms, frequency),
         Timbre::Drums => get_drum_source(duration_ms, frequency),
+        Timbre::CustomSourceUnpitched(file) => get_custom_source_unpitched(Path::new(file), duration_ms),
+        Timbre::CustomSourcePitched(file) => get_custom_source_pitched(Path::new(file), duration_ms, frequency),
+    }
+}
+
+pub fn get_custom_source_pitched(file: &Path, duration_ms: u64, frequency: f32) -> Box<dyn Source<Item=f32> + Send> {
+    // Assume the pitch is currently in C4
+    let original_frequency = C4.0;
+    let pitch_ratio = frequency / original_frequency;
+    #[expect(clippy::cast_possible_truncation, clippy::cast_precision_loss, reason = "User's fault")]
+    #[expect(clippy::cast_sign_loss, reason = "Shouldn't happen")]
+    let unpitched_source = get_custom_source_unpitched(file, ((duration_ms as f32) * pitch_ratio) as u64);
+    // Speed up or slow down the source to match the frequency
+    Box::new(unpitched_source.speed(pitch_ratio).take_duration(Duration::from_millis(duration_ms)))
+}
+
+pub fn get_custom_source_unpitched(file: &Path, duration_ms: u64) -> Box<dyn Source<Item=f32> + Send> {
+    let path = Path::new(file);
+    match std::fs::File::open(path) {
+        Ok(file) => {
+            match Decoder::new(BufReader::new(file)) {
+                Ok(decoder) => Box::new(decoder.convert_samples().take_duration(Duration::from_millis(duration_ms))),
+                Err(_) => {
+                    eprintln!("Warning: Could not decode audio file {:?}, using silence", path);
+                    Box::new(rodio::source::Zero::<f32>::new(1, 44100).convert_samples().take_duration(Duration::from_millis(duration_ms)))
+                }
+            }
+        },
+        Err(_) => {
+            eprintln!("Warning: Could not find custom source file {:?}, using silence", path);
+            Box::new(rodio::source::Zero::<f32>::new(1, 44100).convert_samples().take_duration(Duration::from_millis(duration_ms)))
+        }
     }
 }
 
@@ -39,26 +71,7 @@ fn decibels_to_amplitude_ratio(dec: f32) -> f32 {
     10.0f32.powf(dec / 20.0)
 }
 
-pub fn get_drum_source(_duration_ms: u64, frequency: f32) -> Box<dyn Source<Item=f32> + Send> {
-    fn read_drum_source_file(file: &str) -> Box<dyn Source<Item=f32> + Send> {
-        let path = Path::new("src/assets").join(format!("{}.mp3", file));
-        match std::fs::File::open(&path) {
-            Ok(file) => {
-                match Decoder::new(BufReader::new(file)) {
-                    Ok(decoder) => Box::new(decoder.convert_samples().amplify(1.0)),
-                    Err(_) => {
-                        eprintln!("Warning: Could not decode audio file {:?}, using silence", path);
-                        Box::new(rodio::source::Zero::<f32>::new(1, 44100).convert_samples().amplify(1.0))
-                    }
-                }
-            },
-            Err(_) => {
-                eprintln!("Warning: Could not find drum file {:?}, using silence", path);
-                Box::new(rodio::source::Zero::<f32>::new(1, 44100).convert_samples().amplify(1.0))
-            }
-        }
-    }
-
+pub fn get_drum_source(duration_ms: u64, frequency: f32) -> Box<dyn Source<Item=f32> + Send> {
     let kind = if frequency > C4.octave(1).semitone(6).0 {
         "crash"
     } else if frequency > C4.semitone(6).0 {
@@ -69,7 +82,8 @@ pub fn get_drum_source(_duration_ms: u64, frequency: f32) -> Box<dyn Source<Item
         "snare"
     };
 
-    let base = read_drum_source_file(kind);
+    let path = Path::new("src/assets").join(format!("{}.mp3", kind));
+    let base = get_custom_source_unpitched(&path, duration_ms);
     if kind == "snare" {
         Box::new(base.amplify(5.0))
     } else {

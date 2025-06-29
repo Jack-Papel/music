@@ -33,7 +33,7 @@ impl From<Note> for Piece {
 }
 
 impl Piece {
-    pub(crate) fn get_notes_at_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
+    pub fn get_notes_at_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
         self.0.clone()
             .into_iter()
             .flat_map(move |l| l.get_notes_at_instant(instant).collect::<Vec<_>>())
@@ -42,7 +42,7 @@ impl Piece {
     /// As opposed to `get_notes_at_instant`, this gets any note which would
     /// be playing during a given instant, rather than the notes which start at a given instant.
     #[expect(clippy::arithmetic_side_effects, reason = "Manual bounds checking, almost always safe")]
-    fn get_notes_during_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
+    pub fn get_notes_during_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
         self.0.clone()
             .into_iter()
             .filter_map(move |l| {
@@ -112,6 +112,16 @@ impl Add<Piece> for Piece {
                 })
                 .collect()
         )
+    }
+}
+
+impl Add<Note> for Piece {
+    type Output = Piece;
+
+    #[expect(clippy::arithmetic_side_effects, reason = "Arithmetic implementation")]
+    fn add(self, rhs: Note) -> Self::Output {
+        let line: Line = rhs.into();
+        self + Piece(vec![line])
     }
 }
 
@@ -191,7 +201,7 @@ impl std::fmt::Display for Piece {
                     // Add barline
                     if bar_group_time % 16 == 0 {
                         if bar_group_time == 0 {
-                            line_str.push_str(&format!("{: <3}", tet12::get_note_name(pitch, A4)));
+                            line_str.push_str(&format!("{: <3}", tet12::get_note_name_with_octave(pitch, A4)));
                             if black_key {
                                 line_str.push_str("║ ║");
                             } else {

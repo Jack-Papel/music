@@ -43,6 +43,7 @@ compile_error!("The `interactive-tui` feature requires either the `wav-output` o
 pub mod piece;
 pub mod note;
 pub mod scales;
+pub mod instrument_tools;
 #[cfg(all(feature = "interactive-tui", any(feature = "wav-output", feature = "live-output")))]
 mod interactive;
 #[cfg(any(feature = "wav-output", feature = "live-output"))]
@@ -59,8 +60,7 @@ pub mod prelude {
     pub use crate::{Scale, Tet12};
     pub use crate::{Piece, Line};
     pub use crate::{C4, A4};
-    pub use crate::note::timbre_fns::*;
-    pub use crate::note::note_length_fns::*;
+    pub use crate::note::*;
 }
 
 #[cfg(all(feature = "interactive-tui", any(feature = "wav-output", feature = "live-output")))]

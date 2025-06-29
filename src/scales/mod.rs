@@ -2,7 +2,7 @@ use crate::{note::NotePitch, scales::tet12::A4};
 
 pub mod tet12;
 
-pub use tet12::MajorScale;
+pub use tet12::modes::*;
 
 pub trait Scale {
     fn get_degree(&self, degree: isize) -> NotePitch;

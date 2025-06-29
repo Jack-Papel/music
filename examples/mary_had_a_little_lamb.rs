@@ -2,7 +2,7 @@ use symphoxy::prelude::*;
 use symphoxy::InteractiveTui;
 
 fn mary_had_a_little_lamb() -> impl Into<Piece> {
-    let c_major = symphoxy::scales::MajorScale(C4);
+    let c_major = symphoxy::scales::tet12::IonianScale(C4);
     let [c4, d4, e4, g4] = c_major.get_degrees([1, 2, 3, 5]);
     
     piano(
