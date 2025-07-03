@@ -1,7 +1,6 @@
 # Symphoxy
 
-[![CI](https://img.shields.io/github/actions/workflow/status/Jack-Papel/symphoxy/build
-)](https://github.com/Jack-Papel/symphoxy/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/Jack-Papel/symphoxy/build.yml)](https://github.com/Jack-Papel/symphoxy/actions)
 [![License](https://img.shields.io/crates/l/symphoxy)](https://github.com/Jack-Papel/symphoxy/blob/main/LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/symphoxy)](https://crates.io/crates/symphoxy)
 [![Downloads](https://img.shields.io/crates/d/symphoxy)](https://crates.io/crates/symphoxy)
