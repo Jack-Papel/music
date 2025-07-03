@@ -1,2 +1,33 @@
+# Rust build artifacts
 /target
+Cargo.lock.orig
+
+# Audio output files
 output.wav
+*.wav
+*.mp3
+*.flac
+*.ogg
+
+# IDE and editor files
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+*.tmp
+
+# Documentation build
+/docs/_build/

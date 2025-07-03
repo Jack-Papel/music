@@ -1,8 +1,12 @@
 # Symphoxy
 
+[![CI](https://img.shields.io/github/actions/workflow/status/Jack-Papel/symphoxy/build
+)](https://github.com/Jack-Papel/symphoxy/actions)
 [![License](https://img.shields.io/crates/l/symphoxy)](https://github.com/Jack-Papel/symphoxy/blob/main/LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/symphoxy)](https://crates.io/crates/symphoxy)
 [![Downloads](https://img.shields.io/crates/d/symphoxy)](https://crates.io/crates/symphoxy)
+[![Docs](https://docs.rs/symphoxy/badge.svg)](https://docs.rs/symphoxy)
+[![MSRV](https://img.shields.io/badge/MSRV-1.73.0-blue)](https://github.com/rust-lang/rust/blob/master/RELEASES.md#version-1730-2023-10-05)
 
 Symphoxy is a simple music-as-code library and synthesizer for rust.
 
@@ -16,9 +20,27 @@ Symphoxy is a simple music-as-code library and synthesizer for rust.
 
 Contributions are much appreciated. Feel free to open an issue or a pull request about any problems you encounter.
 
-## Docs
+## Features
 
-Docs are sparse at the moment, but below is a quick-start guide.
+Symphoxy supports different output methods through feature flags:
+
+* **`live-output`** (default): Play music in real-time using the system's audio output
+* **`wav-output`** (default): Render music to WAV files
+* **`interactive-tui`**: Provides an interactive terminal interface for playing or saving music
+
+Enable features in your `Cargo.toml`:
+
+```toml
+[dependencies]
+# Default features (live-output + wav-output)
+symphoxy = "0.2"
+
+# With interactive TUI
+symphoxy = { version = "0.2", features = ["interactive-tui"] }
+
+# Only WAV output (no live playback)
+symphoxy = { version = "0.2", default-features = false, features = ["wav-output"] }
+```
 
 ### Trying it out
 

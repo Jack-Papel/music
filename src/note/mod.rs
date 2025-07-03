@@ -95,7 +95,7 @@ impl Mul<usize> for Note {
     type Output = Line;
 
     fn mul(self, rhs: usize) -> Self::Output {
-        Line::from(Vec::from_iter(std::iter::repeat_n(self, rhs)))
+        Line::from((0..rhs).map(|_| self).collect::<Vec<_>>())
     }
 }
 
