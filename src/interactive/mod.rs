@@ -1,18 +1,19 @@
 use crate::Piece;
 
-#[cfg(feature = "live-output")]
-mod live_mode;
 #[cfg(feature = "wav-output")]
 mod file_mode;
 
+#[cfg(feature = "live-output")]
+mod live_mode;
+
 /// Interactive TUI for playing music pieces in a terminal interface.
 /// Allows users to select modes and configure playback options interactively.
-/// 
+///
 /// # Example
 /// ```no_run
 /// use symphoxy::prelude::*;
 /// use symphoxy::InteractiveTui;
-/// 
+///
 /// let piece = Piece::from(piano(quarter(C4) + quarter(A4)));
 /// InteractiveTui::start(piece);
 /// ```
@@ -21,10 +22,10 @@ pub enum InteractiveTui {}
 impl InteractiveTui {
     /// Starts the interactive TUI for playing a music piece.
     /// Allows users to select playback modes and configure options interactively.
-    /// 
+    ///
     /// # Arguments
     /// * `piece` - The music piece to be played interactively.
-    /// 
+    ///
     /// # Example
     /// ```no_run
     /// use symphoxy::prelude::*;
@@ -41,7 +42,7 @@ impl InteractiveTui {
                 #[cfg(feature = "live-output")]
                 Mode::Live => InteractiveTui::handle_live_mode(&piece),
                 #[cfg(feature = "wav-output")]
-                Mode::File => InteractiveTui::handle_file_mode(&piece)
+                Mode::File => InteractiveTui::handle_file_mode(&piece),
             };
 
             match result {
@@ -80,9 +81,9 @@ impl InteractiveTui {
             }
 
             if let Some((_, (_, value))) = options.iter().enumerate().find(|(idx, (selection, _))| {
-                (idx + 1).to_string() == input || 
-                selection.name.to_lowercase().starts_with(&input) || 
-                selection.description.to_lowercase().starts_with(&input)
+                (idx + 1).to_string() == input
+                    || selection.name.to_lowercase().starts_with(&input)
+                    || selection.description.to_lowercase().starts_with(&input)
             }) {
                 return *value;
             } else {
@@ -129,7 +130,7 @@ impl InteractiveTui {
             }
         }
     }
-    
+
     #[cfg(feature = "wav-output")]
     fn get_path_input(ask: &str) -> String {
         println!("{ask}:");
@@ -155,11 +156,15 @@ impl InteractiveTui {
         let path_input = std::path::Path::new(path);
         let Some(file_name) = path_input.file_name() else {
             return Err("Invalid path. Please enter a valid file name.".to_string());
-        }; 
+        };
         let Some(parent) = path_input.parent() else {
             return Err("Failed to get parent directory. Please enter a valid path.".to_string());
         };
-        let parent = if parent.as_os_str().is_empty() { std::path::Path::new(".") } else { parent };
+        let parent = if parent.as_os_str().is_empty() {
+            std::path::Path::new(".")
+        } else {
+            parent
+        };
         let Ok(absolute_parent_path) = parent.canonicalize() else {
             return Err("Failed to canonicalize path. Please enter a valid path.".to_string());
         };
@@ -187,7 +192,7 @@ trait TuiSelectable: Sized + Copy {
 struct Selections<T> {
     pub description: String,
     pub default: Option<usize>,
-    pub options: Vec<(SelectionInfo, T)>
+    pub options: Vec<(SelectionInfo, T)>,
 }
 
 struct SelectionInfo {
@@ -200,7 +205,7 @@ enum Mode {
     #[cfg(feature = "live-output")]
     Live,
     #[cfg(feature = "wav-output")]
-    File
+    File,
 }
 
 impl TuiSelectable for Mode {
@@ -212,11 +217,22 @@ impl TuiSelectable for Mode {
             default: None,
             options: vec![
                 #[cfg(feature = "live-output")]
-                (SelectionInfo { name: "Play".to_string(), description: "Play music live".to_string() }, Mode::Live),
-
+                (
+                    SelectionInfo {
+                        name: "Play".to_string(),
+                        description: "Play music live".to_string(),
+                    },
+                    Mode::Live,
+                ),
                 #[cfg(feature = "wav-output")]
-                (SelectionInfo { name: "Write".to_string(), description: "Render music to a WAV file".to_string() }, Mode::File),
-            ]
+                (
+                    SelectionInfo {
+                        name: "Write".to_string(),
+                        description: "Render music to a WAV file".to_string(),
+                    },
+                    Mode::File,
+                ),
+            ],
         }
     }
 }

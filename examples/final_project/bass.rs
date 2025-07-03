@@ -1,10 +1,12 @@
+#![cfg_attr(rustfmt, rustfmt_skip)]
+
 use symphoxy::{note::chord::{Chord, ChordFluid}, prelude::*};
 
 use lazy_static::lazy_static;
 
-lazy_static!(
+lazy_static! {
     static ref OPEN_FIVE_SHAPE: Chord = Chord::shape_from_semitone_offsets([7]);
-);
+}
 
 fn downbeat_bass(n1: NotePitch) -> Line {
     bass(eighth(n1) + eighth(REST) * 3)

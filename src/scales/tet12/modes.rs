@@ -23,13 +23,41 @@ macro_rules! implement_scale {
     };
 }
 
-implement_scale!(LydianScale, scale_pattern![w w w h w w h], "Lydian mode - a major-type scale with a raised 4th degree, creating a bright, dreamy sound.");
-implement_scale!(MajorScale, scale_pattern![w w h w w w h], "Major scale - the most common Western scale, providing a happy, bright sound. Also known as Ionian mode.");
-implement_scale!(MixolydianScale, scale_pattern![w w h w w h w], "Mixolydian mode - a major-type scale with a flattened 7th degree.");
-implement_scale!(DorianScale, scale_pattern![w h w w w h w], "Dorian mode - a minor-type scale with a raised 6th degree.");
-implement_scale!(MinorScale, scale_pattern![w h w w h w w], "Natural minor scale - provides a sad, melancholic sound. Also known as Aeolian mode.");
-implement_scale!(PhrygianScale, scale_pattern![h w w w h w w], "Phrygian mode - a minor-type scale with a flattened 2nd degree.");
-implement_scale!(LocrianScale, scale_pattern![h w w h w w w], "Locrian mode - a diminished-type scale with both flattened 2nd and 5th degrees.");
+implement_scale!(
+    LydianScale,
+    scale_pattern![w w w h w w h],
+    "Lydian mode - a major-type scale with a raised 4th degree, creating a bright, dreamy sound."
+);
+implement_scale!(
+    MajorScale,
+    scale_pattern![w w h w w w h],
+    "Major scale - the most common Western scale, providing a happy, bright sound. Also known as Ionian mode."
+);
+implement_scale!(
+    MixolydianScale,
+    scale_pattern![w w h w w h w],
+    "Mixolydian mode - a major-type scale with a flattened 7th degree."
+);
+implement_scale!(
+    DorianScale,
+    scale_pattern![w h w w w h w],
+    "Dorian mode - a minor-type scale with a raised 6th degree."
+);
+implement_scale!(
+    MinorScale,
+    scale_pattern![w h w w h w w],
+    "Natural minor scale - provides a sad, melancholic sound. Also known as Aeolian mode."
+);
+implement_scale!(
+    PhrygianScale,
+    scale_pattern![h w w w h w w],
+    "Phrygian mode - a minor-type scale with a flattened 2nd degree."
+);
+implement_scale!(
+    LocrianScale,
+    scale_pattern![h w w h w w w],
+    "Locrian mode - a diminished-type scale with both flattened 2nd and 5th degrees."
+);
 
 pub use MajorScale as IonianScale;
 pub use MinorScale as AeolianScale;

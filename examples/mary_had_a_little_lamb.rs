@@ -1,3 +1,5 @@
+#![cfg_attr(rustfmt, rustfmt_skip)]
+
 use symphoxy::prelude::*;
 use symphoxy::InteractiveTui;
 

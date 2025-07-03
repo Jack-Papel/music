@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use crate::{interactive::{TuiSelectable, InteractiveTui, PlayResult, SelectionInfo, Selections}, MusicPlayer, Piece};
+use crate::{
+    interactive::{InteractiveTui, PlayResult, SelectionInfo, Selections, TuiSelectable},
+    MusicPlayer, Piece,
+};
 
 impl InteractiveTui {
     pub(super) fn handle_live_mode(piece: &Piece) -> PlayResult {
@@ -65,11 +68,41 @@ impl TuiSelectable for LiveModeSelection {
         Selections {
             description: "Live Mode Options".to_string(),
             options: vec![
-                (SelectionInfo { name: "Play".to_string(), description: "Perform the current piece".to_string() }, Self::Play),
-                (SelectionInfo { name: "Change Tempo".to_string(), description: format!("Current: {} BPM", context.tempo) }, Self::ChangeTempo),
-                (SelectionInfo { name: if context.show_score { "Hide Score" } else { "Show Score" }.to_string(), description: "Toggle score display".to_string() }, Self::ToggleScore),
-                (SelectionInfo { name: "Exit".to_string(), description: "Leave interactive mode".to_string() }, Self::Exit),
-                (SelectionInfo { name: "Switch Mode".to_string(), description: "Return to mode selection".to_string() }, Self::Continue),
+                (
+                    SelectionInfo {
+                        name: "Play".to_string(),
+                        description: "Perform the current piece".to_string(),
+                    },
+                    Self::Play,
+                ),
+                (
+                    SelectionInfo {
+                        name: "Change Tempo".to_string(),
+                        description: format!("Current: {} BPM", context.tempo),
+                    },
+                    Self::ChangeTempo,
+                ),
+                (
+                    SelectionInfo {
+                        name: if context.show_score { "Hide Score" } else { "Show Score" }.to_string(),
+                        description: "Toggle score display".to_string(),
+                    },
+                    Self::ToggleScore,
+                ),
+                (
+                    SelectionInfo {
+                        name: "Exit".to_string(),
+                        description: "Leave interactive mode".to_string(),
+                    },
+                    Self::Exit,
+                ),
+                (
+                    SelectionInfo {
+                        name: "Switch Mode".to_string(),
+                        description: "Return to mode selection".to_string(),
+                    },
+                    Self::Continue,
+                ),
             ],
             default: Some(0),
         }

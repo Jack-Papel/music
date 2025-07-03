@@ -3,26 +3,26 @@ use std::ops::Add;
 use crate::{Line, Note, NoteKind, NotePitch, Piece, Scale, Tet12, C4};
 
 /// Represents a musical chord - a collection of pitches played simultaneously.
-/// 
+///
 /// A chord contains multiple `NotePitch` values that can be played together
 /// to create harmony. Chords can be constructed from individual pitches,
 /// scale degrees, or common chord shapes.
-/// 
+///
 /// # Examples
 /// ```
 /// use symphoxy::prelude::*;
-/// 
+///
 /// // Create a chord from individual pitches
 /// let c_major = Chord::new([
 ///     NotePitch::new(261.63), // C4
 ///     NotePitch::new(329.63), // E4  
 ///     NotePitch::new(392.00), // G4
 /// ]);
-/// 
+///
 /// // Create from scale degrees (C major scale, root + third + fifth)
 /// let scale = MajorScale(C4); // C major scale
 /// let c_major = Chord::from_degrees(&scale, &[1, 3, 5]);
-/// 
+///
 /// // Create common chord shapes
 /// let major_shape = Chord::shape_from_semitone_offsets([4, 7]); // +4 and +7 semitones from root
 /// let a_major = major_shape.transpose_to(A4);
@@ -32,27 +32,27 @@ pub struct Chord(pub Vec<NotePitch>);
 
 impl Chord {
     /// Creates a new chord from an iterator of pitches.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use symphoxy::prelude::*;
-    /// 
+    ///
     /// let pitches = vec![C4, NotePitch::new(329.63), NotePitch::new(392.00)];
     /// let chord = Chord::new(pitches);
     /// ```
-    pub fn new(pitches: impl IntoIterator<Item=NotePitch>) -> Self {
+    pub fn new(pitches: impl IntoIterator<Item = NotePitch>) -> Self {
         Chord(pitches.into_iter().collect())
     }
 
     /// Creates a chord from scale degrees.
-    /// 
+    ///
     /// Given a scale and an array of degree numbers, creates a chord
     /// containing the pitches at those scale degrees.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use symphoxy::prelude::*;
-    /// 
+    ///
     /// let scale = MajorScale(C4); // C major scale
     /// let c_major_triad = Chord::from_degrees(&scale, &[1, 3, 5]); // C-E-G
     /// let c_major_seventh = Chord::from_degrees(&scale, &[1, 3, 5, 7]); // C-E-G-B
@@ -63,20 +63,20 @@ impl Chord {
     }
 
     /// Plays all notes in the chord simultaneously as a piece.
-    /// 
+    ///
     /// Takes a function that converts a single pitch into a line of music,
     /// then applies it to each pitch in the chord and combines them into
     /// a piece where all lines play at the same time.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use symphoxy::prelude::*;
-    /// 
+    ///
     /// let chord = Chord::new([C4, NotePitch::new(329.63), NotePitch::new(392.00)]);
-    /// 
+    ///
     /// // Strike all notes as quarter notes with piano timbre
     /// let piece = chord.strike(|pitch| Line::from(piano(quarter(pitch))));
-    /// 
+    ///
     /// // Or with a more complex pattern
     /// let piece = chord.strike(|pitch| {
     ///     piano(quarter(pitch)) + piano(eighth(pitch)) + piano(eighth(REST))
@@ -111,7 +111,7 @@ impl Chord {
 }
 
 /// A trait for types that can be transformed using chord shapes.
-/// 
+///
 /// This trait enables applying chord structures to musical elements,
 /// typically transposing a chord shape to different root notes.
 pub trait ChordFluid {
@@ -144,13 +144,22 @@ impl ChordFluid for Note {
                 let chord = pitch.with_chord_shape(chord_shape);
 
                 Piece(
-                    chord.0.into_iter().map(|note_pitch| {
-                        Line {
-                            notes: vec![Note(self.0, NoteKind::Pitched { pitch: note_pitch, timbre, volume })],
+                    chord
+                        .0
+                        .into_iter()
+                        .map(|note_pitch| Line {
+                            notes: vec![Note(
+                                self.0,
+                                NoteKind::Pitched {
+                                    pitch: note_pitch,
+                                    timbre,
+                                    volume,
+                                },
+                            )],
                             pickup: vec![],
                             hold_pickup: false,
-                        }
-                    }).collect()
+                        })
+                        .collect(),
                 )
             }
         }
@@ -161,7 +170,10 @@ impl ChordFluid for Line {
     type Output = Piece;
 
     fn with_chord_shape(self, chord_shape: &Chord) -> Self::Output {
-        self.notes.into_iter().map(|note| note.with_chord_shape(chord_shape)).reduce(Add::add)
+        self.notes
+            .into_iter()
+            .map(|note| note.with_chord_shape(chord_shape))
+            .reduce(Add::add)
             .unwrap_or_else(|| Piece(vec![]))
     }
 }
@@ -196,7 +208,7 @@ use std::ops::Deref;
 
 impl Deref for Chord {
     type Target = Vec<NotePitch>;
-    
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -212,7 +224,9 @@ impl Display for Chord {
         } else {
             write!(f, "Chord[")?;
             for (i, pitch) in self.0.iter().enumerate() {
-                if i > 0 { write!(f, ", ")?; }
+                if i > 0 {
+                    write!(f, ", ")?;
+                }
                 write!(f, "{pitch:?}")?;
             }
             write!(f, "]")

@@ -1,22 +1,24 @@
 use std::ops::{Add, Mul, Neg, Not};
 
-use crate::{note::{NoteKind, NoteLength}, Note};
+use crate::{
+    note::{NoteKind, NoteLength},
+    Note,
+};
 
 use super::Piece;
 
-
 /// Represents a sequence of musical notes played one after another (melody/rhythm).
-/// 
+///
 /// A `Line` is a linear sequence of notes that represents a single melodic or
 /// rhythmic line. Lines can be concatenated with `+` to create longer sequences,
-/// and multiple lines can be combined into a `Piece` with `*` to play them 
+/// and multiple lines can be combined into a `Piece` with `*` to play them
 /// simultaneously.
-/// 
+///
 /// ## Pickup Notes
 /// Lines support "pickup" notes - notes that are played before the main sequence
 /// when the line is concatenated to another line. This is useful for musical
 /// phrases that begin before the main beat.
-/// 
+///
 /// # Examples
 /// ```
 /// use symphoxy::prelude::*;
@@ -25,11 +27,11 @@ use super::Piece;
 ///
 /// // Create a simple melody
 /// let melody = piano(quarter(c4)) + piano(quarter(d4)) + piano(half(e4));
-/// 
+///
 /// // Create a line with pickup notes
 /// let mut line_with_pickup = piano(quarter(g4)) + piano(quarter(a4));
 /// line_with_pickup.pickup = vec![piano(eighth(b4))]; // Pickup before the line
-/// 
+///
 /// // Combine lines
 /// // The last note of the previous line is truncated to fit the pickup
 /// let longer_melody = melody + line_with_pickup;
@@ -37,7 +39,7 @@ use super::Piece;
 /// You can also create a pickup using a slightly different syntax:
 /// ```
 /// use symphoxy::prelude::*;
-/// 
+///
 /// let [c4, d4, e4, g4, a4, b4] = MajorScale(C4).get_degrees([1, 2, 3, 5, 6, 7]);
 /// // Create a line with a pickup that holds into the first note
 /// // The `-` operator makes the line a pickup line, and the `!` operator
@@ -45,7 +47,7 @@ use super::Piece;
 /// let mut line_with_pickup = -!piano(eighth(b4) + eighth(g4)) + piano(quarter(g4)) + piano(quarter(a4));
 ///
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct Line{
+pub struct Line {
     /// The main sequence of notes in the line
     pub notes: Vec<Note>,
     /// Notes played before the main sequence when this line follows another
@@ -56,11 +58,11 @@ pub struct Line{
 
 impl Line {
     /// Creates a new empty line.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use symphoxy::prelude::*;
-    /// 
+    ///
     /// let empty_line = Line::new();
     /// assert_eq!(empty_line.notes.len(), 0);
     /// ```
@@ -68,52 +70,49 @@ impl Line {
         Line::default()
     }
     /// Extends the line by adding a rest of the specified duration.
-    /// 
+    ///
     /// This is mostly used internally for convenience, but can also be used
     /// to add rests to a melody or rhythm line.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use symphoxy::prelude::*;
-    /// 
+    ///
     /// let melody = piano(quarter(C4)) + piano(quarter(A4));
     /// let extended = melody.extend(4); // Add a quarter rest (4 time units)
     /// ```
     pub fn extend(&self, extend_by: u16) -> Self {
         if extend_by == 0 {
-            return self.clone()
+            return self.clone();
         }
         #[expect(clippy::arithmetic_side_effects, reason = "User is expected to handle this error")]
-        return self.clone() + Note(
-            NoteLength(extend_by),
-            NoteKind::Rest
-        )
+        return self.clone() + Note(NoteLength(extend_by), NoteKind::Rest);
     }
     /// Returns the total duration of the line in time units.
-    /// 
+    ///
     /// This sums up the durations of all notes in the main sequence.
     /// Pickup notes are not included in this calculation.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use symphoxy::prelude::*;
-    /// 
+    ///
     /// let line = piano(quarter(C4)) + piano(half(A4)); // 4 + 8 = 12 time units
     /// assert_eq!(line.length(), 12);
     /// ```
     pub fn length(&self) -> usize {
-        self.notes.iter().map(|note| note.0.0 as usize).sum()
+        self.notes.iter().map(|note| note.0 .0 as usize).sum()
     }
-    
+
     /// Creates a new line with all notes set to the specified volume.
-    /// 
+    ///
     /// This sets the volume of all pitched notes to the given volume.
     /// Rest notes are unaffected.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use symphoxy::prelude::*;
-    /// 
+    ///
     /// let loud_line = piano(quarter(C4)) + piano(quarter(A4));
     /// let quiet_line = loud_line.volume(0.5); // Half volumebeats
     /// let very_loud = loud_line.volume(2.0);  // Double volume
@@ -122,39 +121,39 @@ impl Line {
         Line {
             notes: self.notes.iter().map(|note| note.volume(volume)).collect(),
             pickup: self.pickup.iter().map(|note| note.volume(volume)).collect(),
-            hold_pickup: self.hold_pickup
+            hold_pickup: self.hold_pickup,
         }
     }
 
     /// Gets the note that starts playing at a specific time instant.
-    /// 
+    ///
     /// Returns an iterator containing the note that begins at the specified
     /// time point, or an empty iterator if no note starts at that instant.
     /// This is useful for timing-based analysis or custom playback systems.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use symphoxy::prelude::*;
-    /// 
+    ///
     /// let line = piano(quarter(C4) + half(A4)); // C4 at 0, A4 at 4
-    /// 
+    ///
     /// let notes_at_0: Vec<_> = line.get_notes_at_instant(0).collect();
     /// assert_eq!(notes_at_0.len(), 1); // C4 starts at time 0
-    /// 
+    ///
     /// let notes_at_4: Vec<_> = line.get_notes_at_instant(4).collect();  
     /// assert_eq!(notes_at_4.len(), 1); // D4 starts at time 4
-    /// 
+    ///
     /// let notes_at_2: Vec<_> = line.get_notes_at_instant(2).collect();
     /// assert_eq!(notes_at_2.len(), 0); // No note starts at time 2
     /// ```
     #[expect(clippy::arithmetic_side_effects, reason = "Manual bounds checking, almost always safe")]
-    pub fn get_notes_at_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
+    pub fn get_notes_at_instant(&self, instant: usize) -> impl Iterator<Item = Note> {
         let mut time_acc = 0;
         for note in self.notes.clone() {
             if time_acc == instant {
                 return Some(note).into_iter();
             }
-            time_acc += note.0.0 as usize
+            time_acc += note.0 .0 as usize
         }
 
         None.into_iter()
@@ -168,7 +167,7 @@ impl Neg for Line {
         Self {
             notes: vec![],
             pickup: self.notes,
-            hold_pickup: self.hold_pickup
+            hold_pickup: self.hold_pickup,
         }
     }
 }
@@ -195,7 +194,7 @@ impl From<Vec<Note>> for Line {
         Line {
             notes,
             pickup: vec![],
-            hold_pickup: false
+            hold_pickup: false,
         }
     }
 }
@@ -277,15 +276,15 @@ impl Add<Line> for Line {
                 break;
             }
 
-            if pickup_length >= time_removed + note.0.0 as usize{
-                time_removed += note.0.0 as usize;
+            if pickup_length >= time_removed + note.0 .0 as usize {
+                time_removed += note.0 .0 as usize;
                 notes_to_remove += 1;
             } else {
                 // Need to remove part of a note
                 notes_to_remove += 1;
                 note_to_add = Some(Note(
-                    NoteLength(note.0.0 - (pickup_length - time_removed) as u16),
-                    note.1
+                    NoteLength(note.0 .0 - (pickup_length - time_removed) as u16),
+                    note.1,
                 ));
                 break;
             }
@@ -307,10 +306,7 @@ impl Add<Line> for Line {
             if let Some(last_note) = notes.iter().last() {
                 let last_index = notes.len() - 1;
 
-                notes[last_index] = Note(
-                    NoteLength(last_note.0.0 + rhs_notes[0].0.0),
-                    last_note.1
-                );
+                notes[last_index] = Note(NoteLength(last_note.0 .0 + rhs_notes[0].0 .0), last_note.1);
 
                 rhs_notes.remove(0);
             }
@@ -319,7 +315,7 @@ impl Add<Line> for Line {
         Line {
             notes: [notes, rhs_notes].concat(),
             pickup: self.pickup,
-            hold_pickup: self.hold_pickup
+            hold_pickup: self.hold_pickup,
         }
     }
 }

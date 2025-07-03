@@ -1,5 +1,8 @@
-use crate::{interactive::{TuiSelectable, InteractiveTui, PlayResult, SelectionInfo, Selections}, play::FileOutputConfig, MusicPlayer, Piece};
-
+use crate::{
+    interactive::{InteractiveTui, PlayResult, SelectionInfo, Selections, TuiSelectable},
+    play::FileOutputConfig,
+    MusicPlayer, Piece,
+};
 
 impl InteractiveTui {
     pub(super) fn handle_file_mode(piece: &Piece) -> PlayResult {
@@ -71,13 +74,62 @@ impl TuiSelectable for FileModeSelection {
         Selections {
             description: "File Mode Options".to_string(),
             options: vec![
-                (SelectionInfo { name: "Write".to_string(), description: "Write the piece to a file".to_string() }, FileModeSelection::Render),
-                (SelectionInfo { name: "Change Tempo".to_string(), description: format!("Current: {} BPM", context.tempo) }, FileModeSelection::ChangeTempo),
-                (SelectionInfo { name: "Change Output Gain".to_string(), description: format!("Current: {}", context.output_config.output_gain) }, FileModeSelection::ChangeOutputGain),
-                (SelectionInfo { name: "Change Sample Rate".to_string(), description: format!("Current: {} Hz", context.output_config.sample_rate) }, FileModeSelection::ChangeSampleRate),
-                (SelectionInfo { name: "Change Output Path".to_string(), description: format!("Current: {}", if let Some(path) = context.path { path } else { "Unset".to_string() }) }, FileModeSelection::ChangeOutputPath),
-                (SelectionInfo { name: "Exit".to_string(), description: "Leave interactive mode".to_string() }, FileModeSelection::Exit),
-                (SelectionInfo { name: "Switch Mode".to_string(), description: "Return to mode selection".to_string() }, FileModeSelection::Continue),
+                (
+                    SelectionInfo {
+                        name: "Write".to_string(),
+                        description: "Write the piece to a file".to_string(),
+                    },
+                    FileModeSelection::Render,
+                ),
+                (
+                    SelectionInfo {
+                        name: "Change Tempo".to_string(),
+                        description: format!("Current: {} BPM", context.tempo),
+                    },
+                    FileModeSelection::ChangeTempo,
+                ),
+                (
+                    SelectionInfo {
+                        name: "Change Output Gain".to_string(),
+                        description: format!("Current: {}", context.output_config.output_gain),
+                    },
+                    FileModeSelection::ChangeOutputGain,
+                ),
+                (
+                    SelectionInfo {
+                        name: "Change Sample Rate".to_string(),
+                        description: format!("Current: {} Hz", context.output_config.sample_rate),
+                    },
+                    FileModeSelection::ChangeSampleRate,
+                ),
+                (
+                    SelectionInfo {
+                        name: "Change Output Path".to_string(),
+                        description: format!(
+                            "Current: {}",
+                            if let Some(path) = context.path {
+                                path
+                            } else {
+                                "Unset".to_string()
+                            }
+                        ),
+                    },
+                    FileModeSelection::ChangeOutputPath,
+                ),
+                (
+                    SelectionInfo {
+                        name: "Exit".to_string(),
+                        description: "Leave interactive mode".to_string(),
+                    },
+                    FileModeSelection::Exit,
+                ),
+                (
+                    SelectionInfo {
+                        name: "Switch Mode".to_string(),
+                        description: "Return to mode selection".to_string(),
+                    },
+                    FileModeSelection::Continue,
+                ),
             ],
             default: Some(0), // Default to Render
         }
