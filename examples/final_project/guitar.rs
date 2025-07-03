@@ -1,3 +1,5 @@
+#![cfg_attr(rustfmt, rustfmt_skip)]
+
 use lazy_static::lazy_static;
 use symphoxy::{instrument_tools::strings::{Frets, GuitarTuning}, note::chord::Chord, prelude::*};
 

@@ -3,6 +3,7 @@
 //! 
 //! In this file is the song I created for my final using this library.
 //! The lyrics aren't in here though.
+#![cfg_attr(rustfmt, rustfmt_skip)]
 
 use symphoxy::prelude::*;
 use symphoxy::InteractiveTui;

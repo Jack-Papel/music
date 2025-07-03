@@ -1,4 +1,4 @@
-name: Rust
+name: CI
 
 on:
   push:
@@ -10,13 +10,117 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable, beta]
+        include:
+          - os: ubuntu-latest
+            deps: sudo apt-get update && sudo apt-get install libasound2-dev
+    
     steps:
     - uses: actions/checkout@v4
-    - name: Install this necessary dependency
-      run: sudo apt-get install libasound2-dev
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+    
+    - name: Install system dependencies
+      if: matrix.deps
+      run: ${{ matrix.deps }}
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --verbose --all-features
+
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --verbose --all-features
+
+    - name: Run doctests
+      run: cargo test --doc --verbose --all-features
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+    
+    - name: Install system dependencies
+      run: sudo apt-get update && sudo apt-get install libasound2-dev
+    
+    - name: Check formatting
+      run: cargo fmt --check --verbose
+
+    - name: Run clippy
+      run: cargo clippy --verbose --all-features -- -D warnings
+
+  feature-test:
+    name: Feature Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install system dependencies
+      run: sudo apt-get update && sudo apt-get install libasound2-dev
+    
+    - name: Test no default features
+      run: cargo test --no-default-features --verbose
+    
+    - name: Test live-output only
+      run: cargo test --no-default-features --features live-output --verbose
+    
+    - name: Test wav-output only
+      run: cargo test --no-default-features --features wav-output --verbose
+    
+    - name: Test interactive-tui
+      run: cargo test --features interactive-tui --verbose
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install system dependencies
+      run: sudo apt-get update && sudo apt-get install libasound2-dev
+    
+    - name: Build documentation
+      run: cargo doc --no-deps --all-features --verbose
+    
+    - name: Check for missing docs
+      run: cargo doc --no-deps --all-features --verbose 2>&1 | grep -q "warning.*missing documentation" && exit 1 || exit 0

@@ -1,12 +1,14 @@
+#![cfg_attr(rustfmt, rustfmt_skip)]
+
 use lazy_static::lazy_static;
 use symphoxy::prelude::*;
 
-lazy_static!(
+lazy_static! {
     static ref KICK: NotePitch = C4.octave(-1);
     static ref SNARE: NotePitch = C4;
     static ref HI_HAT: NotePitch = C4.octave(1);
     static ref CRASH: NotePitch = C4.octave(2);
-);
+}
 
 pub fn drums_verse() -> Line {
     let kick = C4.octave(-1);

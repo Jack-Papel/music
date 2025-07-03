@@ -1,9 +1,11 @@
+#![cfg_attr(rustfmt, rustfmt_skip)]
+
 use symphoxy::prelude::*;
 
 pub fn im_sad_your_back() -> Line {
     let c5 = C4.octave(1);
-    piano(eighth(REST) + eighth(c5) + dotted(eighth)(c5.semitone(-2).into()) + sixteenth(REST)) +
-    piano(eighth(REST) + eighth(c5.semitone(-2)) + dotted(eighth)(c5.semitone(-4).into()) + sixteenth(REST))
+    piano(eighth(REST) + eighth(c5) + dotted(eighth)(c5.semitone(-2)) + sixteenth(REST)) +
+    piano(eighth(REST) + eighth(c5.semitone(-2)) + dotted(eighth)(c5.semitone(-4)) + sixteenth(REST))
 }
 
 pub fn and_i_need_a_big_mac() -> Line {
