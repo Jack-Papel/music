@@ -5,16 +5,67 @@ use line::Line;
 
 use crate::{note::{NoteKind, NotePitch, Timbre}, scales::tet12::{self, A4, C4}, Note, Tet12};
 
+/// Line sequence types and functionality.
+/// 
+/// Contains the `Line` type for representing sequential note sequences.
 pub mod line;
 
-#[derive(Clone, Default)]
+/// Represents a complete musical composition with multiple simultaneous parts.
+/// 
+/// A `Piece` contains multiple `Line`s that play simultaneously, creating
+/// harmony and polyphony. This is the top-level structure for complete
+/// musical compositions.
+/// 
+/// # Examples
+/// ```
+/// use symphoxy::prelude::*;
+/// 
+/// let [c4, d4, e4, f4, g4] = MajorScale(C4).get_degrees([1, 2, 3, 4, 5]);
+/// 
+/// // Create individual lines
+/// let melody = piano(quarter(c4)) + piano(quarter(d4)) + piano(half(e4));
+/// let bass = bass(half(c4)) + bass(half(f4));
+/// let chords = electric_guitar(whole(Chord::new([c4, e4, g4]))); // This is actually a piece
+/// 
+/// // Combine into a piece
+/// let piece = Piece(vec![
+///     melody.clone(),
+///     bass.clone()
+/// ]) * chords.clone();
+/// 
+/// // Or use the * operator to stack lines
+/// let piece2 = melody * bass * chords;
+/// ```
+#[derive(Clone, Default, Debug, PartialEq)]
 pub struct Piece(pub Vec<Line>);
 
 impl Piece {
+    /// Creates a new empty piece.
+    /// 
+    /// # Examples
+    /// ```
+    /// use symphoxy::prelude::*;
+    /// 
+    /// let empty_piece = Piece::new();
+    /// assert_eq!(empty_piece.0.len(), 0);
+    /// ```
     pub fn new() -> Self {
         Default::default()
     }
 
+    /// Creates a new piece with all notes set to the specified volume.
+    /// 
+    /// This applies the volume setting to every note in the piece,
+    /// affecting all pitched notes while leaving rests unchanged.
+    /// 
+    /// # Examples
+    /// ```
+    /// use symphoxy::prelude::*;
+    /// 
+    /// let piece = piano(quarter(C4)) * bass(quarter(C4)); // Two lines playing together
+    /// let quiet_piece = piece.volume(0.3); // 30% volume
+    /// let loud_piece = piece.volume(1.5);  // 150% volume
+    /// ```
     pub fn volume(&self, volume: f32) -> Self {
         Piece(self.0.iter().map(|line| line.volume(volume)).collect())
     }
@@ -28,11 +79,37 @@ impl From<Line> for Piece {
 
 impl From<Note> for Piece {
     fn from(value: Note) -> Self {
-        Piece(vec![Line::new_unchecked(vec![value])])
+        Piece(vec![Line::from(value)])
+    }
+}
+
+// Additional From implementations for Piece ergonomics
+impl From<Vec<Line>> for Piece {
+    fn from(lines: Vec<Line>) -> Self {
+        Piece(lines)
+    }
+}
+
+impl<const N: usize> From<[Line; N]> for Piece {
+    fn from(lines: [Line; N]) -> Self {
+        Piece(lines.to_vec())
     }
 }
 
 impl Piece {
+    /// Gets all notes that start playing at a specific time instant.
+    /// 
+    /// Returns an iterator over all notes across all lines that begin
+    /// at the specified time point. Useful for analysis or custom playback.
+    /// 
+    /// # Examples
+    /// ```
+    /// use symphoxy::prelude::*;
+    /// 
+    /// let piece = piano(quarter(C4)) * bass(quarter(A4)); // Both start at time 0
+    /// let notes_at_start: Vec<_> = piece.get_notes_at_instant(0).collect(); 
+    /// assert_eq!(notes_at_start.len(), 2); // Piano C4 and bass A4
+    /// ```
     pub fn get_notes_at_instant(&self, instant: usize) -> impl Iterator<Item=Note> {
         self.0.clone()
             .into_iter()
@@ -59,6 +136,21 @@ impl Piece {
             })
     }
 
+    /// Returns the total duration of the piece in time units.
+    /// 
+    /// This is the length of the longest line in the piece, since all lines
+    /// play simultaneously and the piece ends when the longest line finishes.
+    /// 
+    /// # Examples
+    /// ```
+    /// use symphoxy::prelude::*;
+    /// 
+    /// let short_line = piano(quarter(C4));           // 4 time units
+    /// let long_line = piano(whole(C4));              // 16 time units  
+    /// let piece = short_line * long_line;
+    /// 
+    /// assert_eq!(piece.length(), 16); // Length of the longest line
+    /// ```
     pub fn length(&self) -> usize {
         self.0.iter()
             .map(|line| line.length())
@@ -250,7 +342,7 @@ impl std::fmt::Display for Piece {
                     // Add barline
                     if bar_group_time % 16 == 0 {
                         if bar_group_time == 0 {
-                            line_str.push_str(&format!("{: <6}", kind));
+                            line_str.push_str(&format!("{kind: <6}"));
                             line_str.push('║');
                         } else {
                             line_str.push('|');

@@ -16,9 +16,9 @@ impl InteractiveTui {
             match choice {
                 FileModeSelection::Render => {
                     if let Ok(ref path) = path.as_ref() {
-                        println!("Rendering piece to {}.", path);
+                        println!("Rendering piece to {path}.");
                         player.render_to_wav(piece.clone(), path);
-                        println!("Rendering complete. Saved to {}.", path);
+                        println!("Rendering complete. Saved to {path}.");
                     } else {
                         println!("No valid output path set. Please set a valid path first.");
                         continue;

@@ -5,9 +5,34 @@ mod live_mode;
 #[cfg(feature = "wav-output")]
 mod file_mode;
 
+/// Interactive TUI for playing music pieces in a terminal interface.
+/// Allows users to select modes and configure playback options interactively.
+/// 
+/// # Example
+/// ```no_run
+/// use symphoxy::prelude::*;
+/// use symphoxy::InteractiveTui;
+/// 
+/// let piece = Piece::from(piano(quarter(C4) + quarter(A4)));
+/// InteractiveTui::start(piece);
+/// ```
 pub enum InteractiveTui {}
 
 impl InteractiveTui {
+    /// Starts the interactive TUI for playing a music piece.
+    /// Allows users to select playback modes and configure options interactively.
+    /// 
+    /// # Arguments
+    /// * `piece` - The music piece to be played interactively.
+    /// 
+    /// # Example
+    /// ```no_run
+    /// use symphoxy::prelude::*;
+    /// use symphoxy::InteractiveTui;
+    ///
+    /// let piece = Piece::from(piano(quarter(C4) + quarter(A4)));
+    /// InteractiveTui::start(piece);
+    /// ```
     pub fn start(piece: Piece) {
         loop {
             let mode = InteractiveTui::get_input::<Mode>(());
@@ -67,14 +92,14 @@ impl InteractiveTui {
     }
 
     fn get_range_input<const MIN: u32, const MAX: u32>(ask: &str) -> u32 {
-        println!("{} (Between {} and {}):", ask, MIN, MAX);
+        println!("{ask} (Between {MIN} and {MAX}):");
         loop {
             let mut input = String::new();
             std::io::stdin().read_line(&mut input).expect("Failed to read line");
 
             if let Ok(value) = input.trim().parse() {
                 if !(MIN..=MAX).contains(&value) {
-                    println!("Please enter a value between {} and {}.", MIN, MAX);
+                    println!("Please enter a value between {MIN} and {MAX}.");
                     continue;
                 }
                 return value;
@@ -87,7 +112,7 @@ impl InteractiveTui {
 
     #[cfg(feature = "wav-output")]
     fn get_positive_float_input(ask: &str) -> f32 {
-        println!("{} (Between 0.0 and infinity):", ask);
+        println!("{ask} (Between 0.0 and infinity):");
         loop {
             let mut input = String::new();
             std::io::stdin().read_line(&mut input).expect("Failed to read line");
@@ -107,7 +132,7 @@ impl InteractiveTui {
     
     #[cfg(feature = "wav-output")]
     fn get_path_input(ask: &str) -> String {
-        println!("{}:", ask);
+        println!("{ask}:");
         loop {
             let mut input = String::new();
             std::io::stdin().read_line(&mut input).expect("Failed to read line");
@@ -118,7 +143,7 @@ impl InteractiveTui {
                     return absolute_path;
                 }
                 Err(err) => {
-                    println!("{}", err);
+                    println!("{err}");
                     continue;
                 }
             }

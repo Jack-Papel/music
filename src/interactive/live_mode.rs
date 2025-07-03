@@ -23,12 +23,12 @@ impl InteractiveTui {
                     let new_tempo = InteractiveTui::get_range_input::<10, 1000>("Enter tempo in BPM");
 
                     player.tempo_bpm = new_tempo;
-                    println!("Tempo changed to {} BPM.", new_tempo);
+                    println!("Tempo changed to {new_tempo} BPM.");
                 }
                 LiveModeSelection::Play => {
                     if show_score {
                         println!("Playing piece with score display:");
-                        println!("{}", piece);
+                        println!("{piece}");
                     } else {
                         println!("Playing piece without score display.");
                     }

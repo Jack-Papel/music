@@ -16,6 +16,28 @@ use crate::{play::{FileOutputConfig, Playable}, MusicPlayer};
 
 
 impl MusicPlayer<FileOutputConfig> {
+    /// Renders a musical piece to a WAV file.
+    /// 
+    /// This method generates audio samples for the entire piece and writes them
+    /// to a WAV file at the specified path. The audio is rendered using the
+    /// player's configured sample rate, gain, and tempo.
+    /// 
+    /// # Arguments
+    /// * `piece` - Any playable musical content (Note, Chord, Line, Piece, etc.)
+    /// * `path` - The file path where the WAV file should be written
+    /// 
+    /// # Example
+    /// ```no_run
+    /// use symphoxy::prelude::*;
+    /// use symphoxy::MusicPlayer;
+    /// 
+    /// let player = MusicPlayer::new_file(300, 1.0, 44100);
+    /// let note = piano(quarter(C4));
+    /// player.render_to_wav(note, "output.wav");
+    /// ```
+    /// 
+    /// # Panics
+    /// This function panics if the file path is unable to be created or written to.
     #[expect(private_bounds, reason = "Only internal types should be playable")]
     pub fn render_to_wav<T: Playable + Clone + Send + Sync + 'static>(&self, piece: T, path: &str) {
         let FileOutputConfig { output_gain, sample_rate } = self.output_config;

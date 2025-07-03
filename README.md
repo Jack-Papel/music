@@ -4,7 +4,7 @@
 [![Crates.io](https://img.shields.io/crates/v/symphoxy)](https://crates.io/crates/symphoxy)
 [![Downloads](https://img.shields.io/crates/d/symphoxy)](https://crates.io/crates/symphoxy)
 
-Symphoxy is a simple FOSS music-as-code library for rust.
+Symphoxy is a simple music-as-code library and synthesizer for rust.
 
 ## Goals
 
@@ -113,7 +113,7 @@ Because of this, a rough outline of a verse and chorus might look like:
 ```rs
 let verse_and_chorus = (
   (verse_vocals() + chorus_vocals()) *
-  (verse_guitar() + chorus_quitar()) *
+  (verse_guitar() + chorus_guitar()) *
   bass_line() * 2 *
   drum_loop() * 2 *
 );

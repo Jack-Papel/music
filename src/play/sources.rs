@@ -39,13 +39,13 @@ pub fn get_custom_source_unpitched(file: &Path, duration_ms: u64) -> Box<dyn Sou
             match Decoder::new(BufReader::new(file)) {
                 Ok(decoder) => Box::new(decoder.convert_samples().take_duration(Duration::from_millis(duration_ms))),
                 Err(_) => {
-                    eprintln!("Warning: Could not decode audio file {:?}, using silence", path);
+                    eprintln!("Warning: Could not decode audio file {path:?}, using silence");
                     Box::new(rodio::source::Zero::<f32>::new(1, 44100).convert_samples().take_duration(Duration::from_millis(duration_ms)))
                 }
             }
         },
         Err(_) => {
-            eprintln!("Warning: Could not find custom source file {:?}, using silence", path);
+            eprintln!("Warning: Could not find custom source file {path:?}, using silence");
             Box::new(rodio::source::Zero::<f32>::new(1, 44100).convert_samples().take_duration(Duration::from_millis(duration_ms)))
         }
     }
@@ -82,7 +82,7 @@ pub fn get_drum_source(duration_ms: u64, frequency: f32) -> Box<dyn Source<Item=
         "snare"
     };
 
-    let path = Path::new("src/assets").join(format!("{}.mp3", kind));
+    let path = Path::new("src/assets").join(format!("{kind}.mp3"));
     let base = get_custom_source_unpitched(&path, duration_ms);
     if kind == "snare" {
         Box::new(base.amplify(5.0))
